@@ -7,7 +7,7 @@ class EmbeddingGenerator:
     """generates embeddings using sentence transformers - runs locally, no api needed"""
 
     def __init__(self, model: str = "all-MiniLM-L6-v2"):
-        # lightweight model, 384 dimensions, good for semantic search
+        # lightweight model
         # downloads automatically on first use
         self.model = SentenceTransformer(model)
 

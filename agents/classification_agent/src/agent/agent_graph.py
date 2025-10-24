@@ -330,16 +330,33 @@ class ReviewAgent:
         try:
             extracted = self.memory_manager.extract(state["messages"])
 
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] Extracted {len(extracted)} memories from conversation")
+                for i, mem in enumerate(extracted, 1):
+                    mem_type = type(mem).__name__
+                    if mem_type == "Episode":
+                        print(f"  {i}. Episode: {mem.observation[:80]}...")
+                    else:
+                        print(f"  {i}. Semantic: {mem.subject} -> {mem.predicate} -> {mem.object}")
+
             stored_count = 0
+            skipped_count = 0
             for memory in extracted:
                 try:
-                    self.memory_store.put(memory, check_duplicates=True)
-                    stored_count += 1
-                except:
-                    pass
+                    mem_id = self.memory_store.put(memory, check_duplicates=True)
+                    # Check if it was actually stored or was a duplicate
+                    if mem_id:
+                        stored_count += 1
+                except Exception as e:
+                    if AGENT_VERBOSE:
+                        print(f"  Error storing memory: {e}")
+                    skipped_count += 1
 
-            if AGENT_VERBOSE and stored_count > 0:
-                print(f"[{self.name}] Stored {stored_count} new memories")
+            if AGENT_VERBOSE:
+                if stored_count > 0:
+                    print(f"[{self.name}] Stored {stored_count} new memories")
+                if skipped_count > 0:
+                    print(f"[{self.name}] Skipped {skipped_count} memories (duplicates or errors)")
 
         except Exception as e:
             if AGENT_VERBOSE:

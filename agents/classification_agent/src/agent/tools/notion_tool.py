@@ -121,6 +121,11 @@ class NotionTool(BaseTool):
             # Process each error in the review
             errors = review_item.get("errors", [])
             for error_item in errors:
+                # Handle case where error_item might be a string instead of dict
+                if isinstance(error_item, str):
+                    # Skip string errors - they're not properly formatted
+                    continue
+
                 # Support both old and new field names
                 categories = error_item.get("categories") or error_item.get("error_type", ["Other"])
                 severity = error_item.get("severity") or error_item.get("criticality", "Medium Priority")
