@@ -1,3 +1,4 @@
+from nicegui.events import UploadEventArguments
 from common.ChatManager import ChatManager
 import websockets
 from nicegui import app, ui
@@ -12,7 +13,9 @@ from common.tools.databse import DatabaseTool
 from common.tools.date_time import DateTime
 from common.tools.communicate import create_comm_tool
 from common.tools.csv import CSVTool
-
+from common.tools.knowledgebase import retriever_tool
+from common.utils import IngestKnowledge
+import os
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -79,12 +82,13 @@ class AgentManager():
             "4.  **Provide the Final Answer**: Only provide the final answer to the user once all steps of your plan are complete."
         )
 
-        tools = [websearch, webscrape, datetime, csv, communicate]
+        tools = [retriever_tool]
         asyncio.create_task(self.worker())
         #asyncio.create_task(self.messanger())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
 application = AgentManager()
+knowledge = IngestKnowledge()
 @ui.page("/")
 def main():
     async def handle_submit():
@@ -97,6 +101,17 @@ def main():
         await application.task_queue.put(text_to_send)
         user_input.value = ''
         update_chat_display()
+    async def handle_file_upload(e: UploadEventArguments):
+        file_name = e.file.name
+        file_path = os.path.join("./knowledge", file_name)
+        try:
+            with open(file_path, 'wb') as file:
+                file.write(await e.file.read())
+                ui.notify(f"File {file_path} was successfully uploaded")
+                await knowledge.ingest_pdf(file_path)
+        except Exception as e:
+            logging.error(f"Failed to upload file: {e}")
+
 
     with ui.column().classes('w-full items-center'):
         ui.label('Welcome').classes('text-2xl mt-4')
@@ -110,7 +125,12 @@ def main():
                 .classes('flex-grow').on('keydown.enter', handle_submit)
             submit_button = ui.button('>', on_click=handle_submit)
             submit_button.bind_enabled_from(user_input, 'value')
-            ui.upload()
+            ui.upload(
+                label="Upload File",
+                on_upload=handle_file_upload,
+                multiple=False,
+                auto_upload=False,
+            )
     logging.info("UI setup")
 
     def update_chat_display():
