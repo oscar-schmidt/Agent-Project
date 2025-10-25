@@ -7,12 +7,12 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI()
 
-question = "How many sales have there been" # put a question here :)
+question = "How much stock is in each warehouse" # put a question here :)
 
 mydb = pymysql.connect(
     host="localhost",
-    user="root",
-    password="root",
+    user="readonly",
+    password="readonly",
     database="business_db",
     port=3307,
     unix_socket="/Applications/XAMPP/xamppfiles/var/mysql/mysql2.sock",
@@ -86,6 +86,9 @@ response1 = client.chat.completions.create(
 query = response1.choices[0].message.content
 
 print(query)
+
+if any(keyword in query.lower() for keyword in ["insert", "update", "delete", "drop", "alter", "truncate", "create"]):
+    raise ValueError("Unsafe query")
 
 cursor.execute(query)
 result = cursor.fetchall()

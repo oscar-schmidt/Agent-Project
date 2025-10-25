@@ -15,15 +15,18 @@ client = OpenAI()
 
 mydb = pymysql.connect(
     host="localhost",
-    user="root",
-    password="root",
+    user="readonly",
+    password="readonly",
     database="business_db",
     port=3307,
     unix_socket="/Applications/XAMPP/xamppfiles/var/mysql/mysql2.sock",
     cursorclass=DictCursor
 )
 
-query = "SELECT COUNT(*) AS total_sales FROM sales_orders;"
+query = "SELECT w.name AS warehouse_name, SUM(i.quantity) AS total_stock FROM warehouses w JOIN inventory i ON i.warehouse_id = w.warehouse_id GROUP BY w.name;"
+
+if any(keyword in query.lower() for keyword in ["insert", "update", "delete", "drop", "alter", "truncate", "create"]):
+    raise ValueError("Unsafe query")
 
 cursor = mydb.cursor()
 cursor.execute(query)

@@ -13,12 +13,12 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI()
 
-question = "what is the total amount of items in each warehouse" # put a question here :)
+question = "Please give me a summary of payments by customer" # put a question here :)
 
 mydb = pymysql.connect(
     host="localhost",
-    user="root",
-    password="root",
+    user="readonly",
+    password="readonly",
     database="business_db",
     port=3307,
     unix_socket="/Applications/XAMPP/xamppfiles/var/mysql/mysql2.sock",
@@ -89,6 +89,9 @@ response1 = client.chat.completions.create(
 
 query = response1.choices[0].message.content
 
+if any(keyword in query.lower() for keyword in ["insert", "update", "delete", "drop", "alter", "truncate", "create"]):
+    raise ValueError("Unsafe query")
+
 cursor = mydb.cursor()
 cursor.execute(query)
 result = cursor.fetchall()
@@ -147,6 +150,8 @@ def ChooseChart(df, query):
 
     The user query was: "{query}"
 
+    The users question was: "{question}"
+
     Your task:
     1. Choose the best chart type for the data.
     2. Suggest the most appropriate column(s) for the X and Y axes (if applicable).
@@ -200,6 +205,7 @@ def reportGenerator(df, query, x, y, graph: bool = False):
         You are a data visualization expert.
         Using the following data details:
 
+        Question: {question}
         Query: {query}
         Schema: {schema}
         Summary statistics: {summary}
@@ -218,6 +224,7 @@ def reportGenerator(df, query, x, y, graph: bool = False):
         You are a data analysis expert.
         Using the following data details:
 
+        Question: {question}
         Query: {query}
         Schema: {schema}
         Summary statistics: {summary}
