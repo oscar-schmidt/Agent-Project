@@ -101,14 +101,19 @@ def main():
         await application.task_queue.put(text_to_send)
         user_input.value = ''
         update_chat_display()
+
     async def handle_file_upload(e: UploadEventArguments):
         file_name = e.file.name
+        file_ext = e.file.name.split('.')[-1]
         file_path = os.path.join("./knowledge", file_name)
         try:
             with open(file_path, 'wb') as file:
                 file.write(await e.file.read())
                 ui.notify(f"File {file_path} was successfully uploaded")
-                await knowledge.ingest_pdf(file_path)
+                if file_ext == "xlsx":
+                    await knowledge.ingest_exel(file_path)
+                else:
+                    await knowledge.ingest_pdf(file_path)
         except Exception as e:
             logging.error(f"Failed to upload file: {e}")
 

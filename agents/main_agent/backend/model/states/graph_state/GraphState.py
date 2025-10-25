@@ -1,14 +1,31 @@
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Type, Callable, Any
 from pydantic import BaseModel, Field, root_validator
 from agents.main_agent.backend.model.states.graph_state.ConfigState import ConfigState
 from agents.main_agent.backend.model.states.graph_state.SummaryState import SummaryState
 from agents.main_agent.backend.model.states.qa_state.DocState import DocState
 from agents.main_agent.backend.model.stores.LogStore import LogStore
 from agents.main_agent.backend.model.stores.MessageStore import MessageStore
-from typing import Annotated
 from langgraph.graph.message import add_messages
+from langgraph.channels import EphemeralValue
+from langgraph.channels.last_value import LastValue
 
 
+class NonCheckpointingValue(LastValue):
+    def __init__(self, typ: Type, reducer: Callable, default_factory: Callable[[], Any]):
+        # Store the default factory to use it on resume
+        super().__init__(typ, reducer)
+        self._default_factory = default_factory
+
+
+    def checkpoint(self):
+        # Don't save anything
+        return None
+
+    def from_checkpoint(self, checkpoint: Any, **kwargs) -> "NonCheckpointingValue":
+        # When resuming from a checkpoint, just reset to a new, empty value
+        # (e.g., a new LogStore())
+        self.value = self._default_factory()
+        return self
 
 def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
     if isinstance(current, dict):
@@ -49,7 +66,7 @@ def merge_logs(current: LogStore, new: LogStore) -> LogStore:
 
 class GraphState(BaseModel):
     messages: Annotated[list, add_messages]
-    logs: Annotated[LogStore, merge_logs] = Field(default_factory=LogStore)
+    #logs: Annotated[LogStore, merge_logs] = Field(default_factory=LogStore)
     plan: str = ""
 
 

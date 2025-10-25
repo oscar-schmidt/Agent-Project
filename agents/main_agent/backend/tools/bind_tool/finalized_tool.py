@@ -2,10 +2,10 @@ from dotenv import load_dotenv
 from ollama import chat
 from langchain_core.messages import AIMessage, HumanMessage
 import os
-
+from langchain_core.tools import BaseTool
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
-from agents.main_agent.backend.tools.base_tool import BaseTool
+#from agents.main_agent.backend.tools.base_tool import BaseTool
 from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_PROMPT_LIST
 
@@ -17,11 +17,13 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 @log_decorator
 class finalized_tool(BaseTool):
     """Respond to user queries"""
+    name: str = "finalized_tool"
+    description: str = "Generate a finalized answer based on user input and previous tool outputs."
 
-    async def ainvoke(self, args: dict) -> ToolReturnClass:
-        return self.invoke(args)
+    def _run(self, user_quary: str) -> str:
+        pass
 
-    def invoke(self, args: dict) -> ToolReturnClass:
+    async def _arun(self, user_query: str) -> str:
         state: GraphState = args["state"]
         user_input = get_user_input()
         prompt = "You are an answer finalized agent. "
@@ -57,3 +59,5 @@ class finalized_tool(BaseTool):
             agent_response=state.messages.ai_response_list[-1].content if state.messages.ai_response_list else "No response",
             meta={"tool_name": "finalized_tool"}
         )
+
+tool = finalized_tool()

@@ -3,7 +3,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient, models
-
+import pandas as pd
 
 class IngestKnowledge():
     """A class to ingest knowledge from PDF files into a Qdrant vector store."""
@@ -29,7 +29,19 @@ class IngestKnowledge():
             collection_name="knowledgebase",
             embedding=OpenAIEmbeddings(),
         )
+    async def ingest_exel(self, exel_path: str):
+        cols = ['ReviewID', 'Reviewer', 'Date', 'ReviewText',
+                'ErrorSummary', 'ErrorType', 'Criticality', 'Rationale']
 
+        df = pd.read_excel(exel_path, usecols=cols)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        docs = text_splitter.split_documents(pd.DataFrame(df))
+        self.vector_store.add_documents(docs)
+        print(f"Ingested {len(docs)} documents from {exel_path} into Exel.")
     async def ingest_pdf(self, pdf_path: str):
         """Ingest a PDF file into the vector store."""
         loader = PyPDFLoader(pdf_path)

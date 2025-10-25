@@ -3,15 +3,24 @@ import os
 from dotenv import load_dotenv
 from agents.main_agent.backend.embedding.chroma_setup import insert_pdf_summary
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from langchain_core.tools import BaseTool
 from agents.main_agent.backend.utils import single_chunk_summary, clean_text, log_decorator
 
 load_dotenv()
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
+class GetSummary(BaseTool):
+    name: str = "GetSummary"
+    description: str = "Get pdf summaries"
 
+    def _run(self, ) -> str:
+        pass
+    async def _arun(self) -> str:
+       pass
 @log_decorator
 def get_summary_node(state: GraphState) -> GraphState:
+
     chunked_text_content = [
         copy.deepcopy(chunk.chunk) for chunk in state.qa_state.chunked_doc_text
     ]
