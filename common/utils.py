@@ -1,5 +1,6 @@
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient, models
@@ -42,6 +43,7 @@ class IngestKnowledge():
         docs = text_splitter.split_documents(pd.DataFrame(df))
         self.vector_store.add_documents(docs)
         print(f"Ingested {len(docs)} documents from {exel_path} into Exel.")
+
     async def ingest_pdf(self, pdf_path: str):
         """Ingest a PDF file into the vector store."""
         loader = PyPDFLoader(pdf_path)
