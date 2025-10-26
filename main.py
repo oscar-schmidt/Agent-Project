@@ -19,8 +19,7 @@ def main_page():
         with ui.column().classes('flex-9 w-3/4 h-full overflow-y-auto border rounded-lg p-4 bg-gray-50 shadow-sm'):
             render_chat_section(adapter)
 
-
-asyncio.get_event_loop().create_task(adapter.start())
+    asyncio.get_event_loop().create_task(adapter.start())
 
 
 ui.run(title='Graph AI Chat', reload=True, port=8080)

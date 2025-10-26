@@ -58,23 +58,22 @@ class ConnectionManager:
             raise ConnectionError("Websocket not connected")
         self.task = asyncio.create_task(self.receive(message_handler))
 
-
-async def receive(self, message_handler):
-    while True:
-        if not self._websocket:
-            await self.connect()
-        try:
-            async for message in self._websocket:
-                data = json.loads(message)
-                await message_handler(data)
-        except (websockets.ConnectionClosedError, ConnectionResetError):
-            logging.warning("WebSocket closed, reconnecting...")
-            self._websocket = None
-            await asyncio.sleep(5)
-        except Exception as e:
-            logging.error(f"Receive error: {e}")
-            self._websocket = None
-            await asyncio.sleep(5)
+    async def receive(self, message_handler):
+        while True:
+            if not self._websocket:
+                await self.connect()
+            try:
+                async for message in self._websocket:
+                    data = json.loads(message)
+                    await message_handler(data)
+            except (websockets.ConnectionClosedError, ConnectionResetError):
+                logging.warning("WebSocket closed, reconnecting...")
+                self._websocket = None
+                await asyncio.sleep(5)
+            except Exception as e:
+                logging.error(f"Receive error: {e}")
+                self._websocket = None
+                await asyncio.sleep(5)
 
     async def close(self):
         self._websocket.close()
