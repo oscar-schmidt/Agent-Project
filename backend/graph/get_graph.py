@@ -3,6 +3,7 @@ import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
+from Server.adaptor import Adaptor
 from backend.model.states.graph_state.GraphState import GraphState
 from backend.tools.tool_invoke_agent import tool_agent
 
@@ -23,12 +24,16 @@ async def get_memory():
     return _memory_instance
 
 
-async def get_graph(state: GraphState = None):
+async def get_graph(state: GraphState = None, adaptor: Adaptor = None):
     global _compiled_graph
 
     if _compiled_graph is None:
         graph = StateGraph(GraphState)
-        graph.add_node("tool_agent", tool_agent, is_async=True)
+
+        async def tool_agent_node(s: GraphState) -> GraphState:
+            return await tool_agent(s, adaptor=adaptor)
+
+        graph.add_node("tool_agent", tool_agent_node, is_async=True)
 
         graph.add_edge(START, "tool_agent")
         graph.add_edge("tool_agent", END)

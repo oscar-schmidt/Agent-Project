@@ -2,6 +2,7 @@ import asyncio
 import os
 from nicegui import ui
 import tempfile
+from Server.adaptor import Adaptor
 from backend.dataBase_setup.chroma_setup import get_all_collection_name
 from backend.model.states.StateManager import StateManager
 from backend.model.states.graph_state.GraphState import GraphState
@@ -15,7 +16,7 @@ state_initialized = False
 
 
 @ui.refreshable
-def render_chat_section():
+def render_chat_section(adaptor: Adaptor):
     if not state_initialized:
         ui.label("Loading chat state...")
 
@@ -50,21 +51,23 @@ def render_chat_section():
             ).props('autofocus').classes('flex-1')
 
             ui.button('Send', on_click=lambda e: asyncio.create_task(
-                on_chat_submit_wrapper(user_input, chat_scroll, chat_content)
+                on_chat_submit_wrapper(
+                    user_input, chat_scroll, chat_content, adaptor)
             )).classes('mt-4')
 
             user_input.on('keydown.enter', lambda e: asyncio.create_task(
-                on_chat_submit_wrapper(user_input, chat_scroll, chat_content)
+                on_chat_submit_wrapper(
+                    user_input, chat_scroll, chat_content, adaptor)
             ))
 
 
-async def on_chat_submit_wrapper(user_input, chat_scroll, chat_content):
+async def on_chat_submit_wrapper(user_input, chat_scroll, chat_content, adaptor):
     text = user_input.value.strip()
     user_input.value = ""
-    await on_chat_submit(text, chat_scroll, chat_content)
+    await on_chat_submit(text, chat_scroll, chat_content, adaptor)
 
 
-async def on_chat_submit(text, chat_scroll, chat_content):
+async def on_chat_submit(text, chat_scroll, chat_content, adaptor):
     if not text:
         return
 
@@ -82,7 +85,7 @@ async def on_chat_submit(text, chat_scroll, chat_content):
 
     chat_scroll.scroll_to(percent=1.0)
 
-    compiled_graph = await get_graph(state)
+    compiled_graph = await get_graph(state, adaptor)
 
     config = {
         "configurable": {
