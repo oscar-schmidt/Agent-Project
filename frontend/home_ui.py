@@ -20,13 +20,13 @@ def render_chat_section(adaptor: Adaptor):
     if not state_initialized:
         ui.label("Loading chat state...")
 
-        async def background_init():
+        async def background_init(adaptor):
             global state_initialized
-            await initialize_state()
+            await initialize_state(adaptor)
             state_initialized = True
             render_chat_section.refresh()
 
-        asyncio.get_event_loop().create_task(background_init())
+        asyncio.get_event_loop().create_task(background_init(adaptor))
         return
 
     state = StateManager.get_state()
@@ -85,7 +85,7 @@ async def on_chat_submit(text, chat_scroll, chat_content, adaptor):
 
     chat_scroll.scroll_to(percent=1.0)
 
-    compiled_graph = await get_graph(state, adaptor)
+    compiled_graph = await get_graph(adaptor)
 
     config = {
         "configurable": {
@@ -176,8 +176,8 @@ def render_collection_list():
     StateManager.update_state(state)
 
 
-async def initialize_state():
-    compiled_graph = await get_graph()
+async def initialize_state(adaptor: Adaptor):
+    compiled_graph = await get_graph(adaptor)
     config = {"configurable": {"thread_id": "123"}}
 
     try:

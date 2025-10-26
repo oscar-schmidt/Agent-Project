@@ -24,14 +24,19 @@ async def get_memory():
     return _memory_instance
 
 
-async def get_graph(state: GraphState = None, adaptor: Adaptor = None):
-    global _compiled_graph
+async def get_graph(adaptor: Adaptor = None):
+    global _compiled_graph, _adaptor_instance
 
     if _compiled_graph is None:
+        if adaptor is None:
+            raise ValueError(
+                "adaptor must be provided for first initialization")
+
+        _adaptor_instance = adaptor
         graph = StateGraph(GraphState)
 
         async def tool_agent_node(s: GraphState) -> GraphState:
-            return await tool_agent(s, adaptor=adaptor)
+            return await tool_agent(s, adaptor=_adaptor_instance)
 
         graph.add_node("tool_agent", tool_agent_node, is_async=True)
 
