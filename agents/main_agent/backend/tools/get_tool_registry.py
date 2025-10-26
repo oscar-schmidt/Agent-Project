@@ -10,9 +10,7 @@ def get_tool_registry():
             "invoke": qa_tool(),
             "name": "qa_tool",
             "priority": 1,
-            "condition": lambda state, user_input: (
-                state.qa_state.is_upload
-            ),
+            "condition": lambda state, user_input: True
         },
         "summary_tool": {
             "tool": summary_tool,
@@ -20,8 +18,8 @@ def get_tool_registry():
             "name": "summary_tool",
             "priority": 2,
             "condition": lambda state, user_input: (
-                state.qa_state.is_upload
-                and any(kw in user_input.lower() for kw in ["summary", "abstract", "overview"])
+                any(kw in user_input.lower()
+                    for kw in ["summary", "abstract", "overview"])
             ),
         },
         "chat_tool": {
@@ -29,6 +27,6 @@ def get_tool_registry():
             "invoke": chat_tool(),
             "name": "chat_tool",
             "priority": 3,
-            "condition": lambda state, user_input: False if state.qa_state.is_upload else True
+            "condition": lambda state, user_input: False
         }
     }

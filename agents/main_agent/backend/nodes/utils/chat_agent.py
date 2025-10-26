@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 from ollama import chat
 from langchain_core.messages import AIMessage, HumanMessage
 import os
-from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
-from agents.main_agent.backend.utils import get_user_input, log_decorator
+from backend.model.states.graph_state.GraphState import GraphState
+from backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_PROMPT_LIST
 
 load_dotenv()
@@ -26,7 +26,7 @@ def chat_agent(state: GraphState) -> GraphState:
             OLLAMA_MODEL, [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_input}])
 
         state.logs.append(system_prompt)
-        state.logs.append(response)
+
         state.messages.append(
             AIMessage(content=response.message.content))
 

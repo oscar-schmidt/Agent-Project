@@ -2,12 +2,21 @@ from datetime import datetime
 import os
 import hashlib
 from dotenv import load_dotenv
-from chromadb import PersistentClient
+from chromadb import Client, PersistentClient
 from sentence_transformers import SentenceTransformer
+<<<<<<<< HEAD:agents/main_agent/backend/depricated/embedding/chroma_setup.py
 from agents.main_agent.backend.model.states.StateManager import StateManager
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.model.states.qa_state.DocTextClass import Meta
 from agents.main_agent.backend.utils import get_embedding, log_decorator
+========
+import streamlit
+from backend.model.states.StateManager import StateManager
+from backend.model.states.graph_state.GraphState import GraphState
+from backend.model.states.qa_state.DocTextClass import Meta
+from backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
+from backend.utils import get_embedding, get_user_input, log_decorator
+>>>>>>>> origin/staging:backend/dataBase_setup/chroma_setup.py
 
 load_dotenv()
 
@@ -36,11 +45,11 @@ def get_or_create_doc_collection():
 
 
 @log_decorator
-def get_all_collection_name(state: GraphState):
+def get_all_collection_name():
     client = PersistentClient(path=CHROMA_PATH)
     collections = client.list_collections()
     collection_names_list = [c.name for c in collections]
-    state.collection_names_list = collection_names_list
+    return collection_names_list
 
 
 @log_decorator

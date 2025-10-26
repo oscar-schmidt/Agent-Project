@@ -3,9 +3,9 @@ import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from agents.main_agent.backend.depricated.embedding.sql_setup import create_checkpoint_memory
-from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
-from agents.main_agent.backend.tools.tool_invoke_agent import tool_agent
+from Server.adaptor import Adaptor
+from backend.model.states.graph_state.GraphState import GraphState
+from backend.tools.tool_invoke_agent import tool_agent
 
 load_dotenv()
 
@@ -24,12 +24,21 @@ async def get_memory():
     return _memory_instance
 
 
-async def get_graph(state: GraphState = None):
-    global _compiled_graph
+async def get_graph(adaptor: Adaptor = None):
+    global _compiled_graph, _adaptor_instance
 
     if _compiled_graph is None:
+        if adaptor is None:
+            raise ValueError(
+                "adaptor must be provided for first initialization")
+
+        _adaptor_instance = adaptor
         graph = StateGraph(GraphState)
-        graph.add_node("tool_agent", tool_agent, is_async=True)
+
+        async def tool_agent_node(s: GraphState) -> GraphState:
+            return await tool_agent(s, adaptor=_adaptor_instance)
+
+        graph.add_node("tool_agent", tool_agent_node, is_async=True)
 
         graph.add_edge(START, "tool_agent")
         graph.add_edge("tool_agent", END)
