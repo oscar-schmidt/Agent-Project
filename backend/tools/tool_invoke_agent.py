@@ -9,7 +9,6 @@ from backend.model.states.graph_state.GraphState import GraphState
 from backend.tools.bind_tool.finalized_tool import finalized_tool
 from backend.tools.command import command
 from backend.utils import get_user_input, log_decorator
-import streamlit as st
 from constants import SYSTEM_PROMPT_LIST
 from backend.tools.get_tool_registry import get_tool_registry
 
@@ -33,8 +32,6 @@ async def tool_agent_async(state: GraphState) -> GraphState:
                   {"role": "user", "content": user_input}],
         tools=[bind_tool["tool"] for bind_tool in bind_tools],
     )
-
-    state.logs.append(f"{response}")
 
     final_state = await invoke_tool(response.message, bind_tools, state)
     return final_state
@@ -100,7 +97,6 @@ async def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphS
 
     result = await tool_to_invoke["invoke"].ainvoke(args)
     new_state = command(tool_name, result)
-    state.logs.append(f"[execute_tool] Executing {tool_name}")
 
     return new_state
 
@@ -121,7 +117,8 @@ def get_tool_name_list(message, state: GraphState) -> list[tuple[str, dict]]:
                 fixed_content = message.content.replace("'", '"')
                 content_json = json.loads(fixed_content)
 
-            tools = content_json.get("tools", [])
+            tools = content_json.get("tools", []) if content_json.get(
+                "tools", []) else content_json.get("name", [])
             for t in tools:
                 tool_name = t.get("tool_name") or t.get("tool")
                 if not tool_name:
@@ -130,7 +127,7 @@ def get_tool_name_list(message, state: GraphState) -> list[tuple[str, dict]]:
                 args["state"] = state
                 tool_name_args.append((tool_name, args))
         except:
-            state.messages.ai_response_list.append(
+            state.messages.append(
                 AIMessage(content="Can I Beg Your Pardon?"))
 
     return tool_name_args

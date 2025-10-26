@@ -2,7 +2,6 @@ from typing import List
 import os
 from dotenv import load_dotenv
 import numpy as np
-import streamlit
 from backend.model.states.graph_state.GraphState import GraphState
 from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
 from backend.utils import get_embedding, log_decorator
@@ -10,16 +9,18 @@ from backend.utils import get_embedding, log_decorator
 load_dotenv()
 
 EMBED_MODEL = os.getenv("EMBED_MODEL")
+TOP_K = int(os.getenv("TOP_K", 50))
 
 
 @log_decorator
-def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[str, list[float]]:
+def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[List[DocTextClass], str, float]:
     try:
         num = collection.count()
         result = collection.query(
-            query_embeddings=embeded_query, n_results=state.graph_config.TOP_K, include=["documents", "distances", "metadatas"])
-    except Exception:
-        return None, 0.0
+            query_embeddings=embeded_query, n_results=TOP_K, include=["documents", "distances", "metadatas"])
+    except Exception as e:
+        print(e)
+        return [], None, 0.0
 
     if result.get("documents"):
         top_k_result = top_k_result_to_log(state, result)
@@ -33,7 +34,7 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
     else:
         top_k_kb = None
         top_score = 0.0
-    return top_k_kb, top_score
+    return top_k_result, top_k_kb, top_score
 
 
 def top_k_result_to_log(state, query) -> List[DocTextClass]:
@@ -47,7 +48,7 @@ def top_k_result_to_log(state, query) -> List[DocTextClass]:
             pdf_text_obj.meta.doc_name = state.qa_state.doc_name
             top_k_result.append(pdf_text_obj)
             state.logs.append(
-                f"[TOP_{state.graph_config.TOP_K}_RESULT] doc_name: {pdf_text_obj.meta.doc_name}, "
+                f"[TOP_{TOP_K}_RESULT] doc_name: {pdf_text_obj.meta.doc_name}, "
                 f"page_number: {pdf_text_obj.meta.referenece_number}, "
                 # f"chunk_summary: {pdf_text_obj.meta.chunk_summary}"
                 f"chunk_content: {pdf_text_obj.chunk}"

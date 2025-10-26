@@ -1,5 +1,5 @@
 import asyncio
-from functools import wraps
+from functools import lru_cache, wraps
 from copy import deepcopy
 import json
 import re
@@ -11,10 +11,9 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from functools import wraps
-import streamlit as st
 from transformers import pipeline
 from backend.model.states.StateManager import StateManager
-
+from langchain_core.messages import HumanMessage
 from backend.model.states.graph_state.GraphState import GraphState
 
 load_dotenv()
@@ -28,8 +27,7 @@ def log_decorator(function):
     if asyncio.iscoroutinefunction(function):
         @wraps(function)
         async def async_wrapper(*args, **kwargs):
-            state = kwargs.get("state") or getattr(
-                st.session_state, "state", None)
+            state = kwargs.get("state")
             if state is None:
                 state = StateManager.get_state()
             try:
@@ -44,8 +42,7 @@ def log_decorator(function):
     else:
         @wraps(function)
         def sync_wrapper(*args, **kwargs):
-            state = kwargs.get("state") or getattr(
-                st.session_state, "state", None)
+            state = kwargs.get("state")
             if state is None:
                 state = StateManager.get_state()
             try:
@@ -85,7 +82,7 @@ def normalize_vector(vec: list[float]) -> list[float]:
     return (arr / norm).tolist()
 
 
-@st.cache_resource
+@lru_cache(maxsize=1)
 def load_model():
     return SentenceTransformer(model_name_or_path=EMBED_MODEL)
 
@@ -94,11 +91,13 @@ def load_model():
 def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_len: Optional[int] = None) -> str:
     single_chunk_len = len(single_chunk.split())
     max_new = max_len if max_len else max(1, single_chunk_len // 2)
-    min_len = min_len if min_len else min(50, single_chunk_len)
+    min_new = min_len if min_len else min(50, single_chunk_len)
+    if min_new > max_new:
+        min_new = max_new // 2
     summary = summary_pipeline(
         single_chunk,
         max_new_tokens=max_new,
-        min_length=min_len,
+        min_length=min_new,
         do_sample=False
     )
     if summary and "summary_text" in summary[0]:
@@ -120,5 +119,10 @@ def clean_text(text: str) -> str:
 
 def get_user_input() -> str:
     state = StateManager.get_state()
-    user_input = state.messages.user_query_list[-1].content if state.messages.user_query_list else None
-    return user_input
+
+    user_messages = [
+        msg for msg in state.messages if isinstance(msg, HumanMessage)]
+
+    if user_messages:
+        return user_messages[-1].content
+    return ""

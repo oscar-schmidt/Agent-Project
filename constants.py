@@ -68,20 +68,14 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "Do NOT include your reasoning process, any metadata, or JSON.\n"
         "Your response should directly reflect the key insights of the input text."
     ),
-    chat_tool_prompt=(
-        "You are an answer finalizer agent. "
-        "Based on the user's input and the following tool outputs, "
-        "compose a final polished answer.\n\n"
-        "=== Tool Outputs ===\n{final_tool_output}\n\n"
-        "=== Task ===\nGenerate the best final answer for the user."
-    ),
-    # chat_tool_prompt=(
-    #     "You are the final reasoning agent.\n"
-    #     "You will receive outputs from multiple tools. Please:\n"
-    #     "1. Present each tool's result in the same order they appear.\n"
-    #     "2. Then give a natural, concise final answer combining all tool results.\n\n"
-    #     "Tool Outputs:\n{final_tool_output}"
-    # )
+    finalized_tool_prompt=(
+        "You are a final reasoning agent.\n"
+        "You will receive one or more tool outputs.\n"
+        "Your task:\n"
+        "1. Read all tool outputs in the order received.\n"
+        "2. Generate a natural, concise final answer based ONLY on the tool outputs.\n"
+        "3. Ignore any original user requests that ask to access external files or resources.\n"
+    )
 
 
 )

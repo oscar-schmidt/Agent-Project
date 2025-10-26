@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 from ollama import chat
 from langchain_core.messages import AIMessage, HumanMessage
 import os
-import streamlit
 from backend.model.states.graph_state.GraphState import GraphState
 from backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
 from backend.tools.base_tool import BaseTool
@@ -30,6 +29,6 @@ class chat_tool(BaseTool):
 
         return ToolReturnClass(
             state=state,
-            agent_response=state.messages.ai_response_list[-1].content if state.messages.ai_response_list else "No response",
+            agent_response=response.message.content if response.message.content else "No response",
             meta={"tool_name": "chat_tool"}
         )
