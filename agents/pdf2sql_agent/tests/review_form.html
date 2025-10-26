@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Review</title>
+</head>
+<body>
+    <h1>Add New Review</h1>
+
+    <p>Next Review ID: <span id="review-id">Loading...</span></p>
+
+    <div id="message"></div>
+
+    <form id="reviewForm">
+        <p>
+            <label>Review Text:</label><br>
+            <textarea name="review" rows="4" cols="50" required></textarea>
+        </p>
+
+        <p>
+            <label>Username:</label><br>
+            <input type="text" name="username" required>
+        </p>
+
+        <p>
+            <label>Email:</label><br>
+            <input type="email" name="email" required>
+        </p>
+
+        <p>
+            <label>Reviewer Name:</label><br>
+            <input type="text" name="reviewer_name" required>
+        </p>
+
+        <p>
+            <label>Rating:</label><br>
+            <input type="radio" name="rating" value="1" required> 1
+            <input type="radio" name="rating" value="2"> 2
+            <input type="radio" name="rating" value="3"> 3
+            <input type="radio" name="rating" value="4"> 4
+            <input type="radio" name="rating" value="5"> 5
+        </p>
+
+        <button type="submit">Add Review</button>
+    </form>
+
+    <script>
+        // Get next review ID
+        fetch('/next-id')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('review-id').textContent = data.next_id;
+            });
+
+        // Handle form submission
+        document.getElementById('reviewForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const reviewData = Object.fromEntries(formData);
+
+            fetch('/add-review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('message').innerHTML =
+                        `<p> Review ${data.review_id} added!</p>`;
+                    this.reset();
+                    document.getElementById('review-id').textContent = data.next_id;
+                } else {
+                    document.getElementById('message').innerHTML =
+                        `<p> Error: ${data.error}</p>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
