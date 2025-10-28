@@ -1,9 +1,6 @@
-
-import asyncio
 from nicegui import ui
-from Server.adaptor import Adaptor
-from frontend.home_ui import render_chat_section, render_sidebar
-import os
+from agents.main_agent.frontend.home_ui import render_chat_section, render_sidebar
+
 
 
 @ui.page('/')
