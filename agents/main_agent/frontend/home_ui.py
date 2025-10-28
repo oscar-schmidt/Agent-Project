@@ -2,13 +2,13 @@ import asyncio
 import os
 from nicegui import ui
 import tempfile
-from backend.dataBase_setup.chroma_setup import get_all_collection_name
-from backend.model.states.StateManager import StateManager
-from backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.dataBase_setup.chroma_setup import get_all_collection_name
+from agents.main_agent.backend.model.states.StateManager import StateManager
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from langchain_core.messages import HumanMessage, AIMessage
-from backend.graph.get_graph import get_graph
-from backend.nodes.excel_node.process_excel_node import process_excel_node
-from backend.nodes.pdf_node.process_pdf_node import process_pdf_node
+from agents.main_agent.backend.graph.get_graph import get_graph
+from agents.main_agent.backend.nodes.excel_node.process_excel_node import process_excel_node
+from agents.main_agent.backend.nodes.pdf_node.process_pdf_node import process_pdf_node
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 state_initialized = False

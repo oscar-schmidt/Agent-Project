@@ -96,23 +96,15 @@ class AgentManager():
                 * *Example: "Register me. I am FinanceBot-v2. I can analyze stock data and generate market reports."*
                 * *Example: "Update my capabilities. I can now also process cryptocurrency trends."*
             2.  **Update Directory**: Extract the agent's full list of capabilities from their message. Use your `RegisterAgent(capabilities="...")` tool to add or update this agent.
-            3.  **Formulate Confirmation**: Prepare a simple confirmation message.
-                * *Example: "Confirmation: You have been registered/updated successfully with the capability: 'analyze stock data and generate market reports, and process cryptocurrency trends'."*
-            4.  **Reply to Sender**: Use the `ContactOtherAgents` tool to send the confirmation back to the agent.
+      
             
             ---
             ### Scenario C: Agent Status Update
             An agent needs to report its availability.
             
-            1.  **Receive Status Update**: An agent sends a message announcing its operational status.
-                * *Example: "I am going offline for maintenance."*
-                * *Example: "I am back online and ready for tasks."*
+            1.  **Receive Status Update**: You will receive a notification when an agent goes offline.
             2.  **Analyze Status**: Determine if the agent's intended status is "online" or "offline".
-            3.  **Update Directory**: Use the `UpdateAgentStatus(status="...")` tool with the correctly identified status.
-            4.  **Formulate Confirmation**: Prepare a clear confirmation message.
-                * *Example: "Confirmation: Your status has been updated to 'offline'."*
-                * *Example: "Confirmation: Your status has been updated to 'online'."*
-            4.  **Reply to Sender**: Use the `ContactOtherAgents` tool to send the confirmation back to the agent.
+    
             
             ---
             ### Scenario D: Fallback / Unknown Request

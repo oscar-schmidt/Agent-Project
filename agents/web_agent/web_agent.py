@@ -87,8 +87,16 @@ class AgentManager():
         asyncio.create_task(self.worker())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
-application = AgentManager()
+
 knowledge = IngestKnowledge()
+
+async def main():
+    application = AgentManager()
+    await application.startup()
+    await asyncio.Event().wait()
+if __name__ == "__main__":
+    asyncio.run(main())
+"""
 @ui.page("/")
 def main():
     async def handle_submit():
@@ -155,6 +163,7 @@ app.on_startup(application.startup)
 ui.run()
 
 
+"""
 
 
 
