@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import re
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage
@@ -20,7 +21,7 @@ load_dotenv()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-async def tool_agent_async(state: GraphState, adaptor: Adaptor = None) -> GraphState:
+async def tool_agent_async(state: GraphState) -> GraphState:
     client = ollama.AsyncClient()
     user_input = get_user_input()
 
@@ -36,16 +37,14 @@ async def tool_agent_async(state: GraphState, adaptor: Adaptor = None) -> GraphS
         tools=[bind_tool["tool"] for bind_tool in bind_tools],
     )
 
-    final_state = await invoke_tool(response.message, bind_tools, state, adaptor)
+    final_state = await invoke_tool(response.message, bind_tools, state)
     return final_state
 
 
-@log_decorator
-async def tool_agent(state: GraphState, adaptor: Adaptor = None) -> GraphState:
-    return await tool_agent_async(state, adaptor)
+async def tool_agent(state: GraphState) -> GraphState:
+    return await tool_agent_async(state)
 
 
-@log_decorator
 def get_bind_tools(state: GraphState) -> list:
     tool_to_bind = []
     tool_registry = get_tool_registry()
@@ -63,19 +62,19 @@ def get_bind_tools(state: GraphState) -> list:
     return tool_to_bind
 
 
-@log_decorator
-async def invoke_tool(message, bind_tools, state: GraphState, adaptor: Adaptor = None) -> GraphState:
+async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
+    adaptor = None
     tool_name_args = get_tool_name_list(message, state)
     user_input = get_user_input()
     new_state = state
 
-    if not bind_tools or len(bind_tools) == 0 or not tool_name_args:
-        if adaptor:
-            new_state = await send_request_to_others(message, new_state, adaptor)
-        else:
-            new_state.messages.append(
-                AIMessage(content="No tools available. Responding directly."))
-        return new_state
+    # if not bind_tools or len(bind_tools) == 0 or not tool_name_args:
+    #     if adaptor:
+    #         new_state = await send_request_to_others(message, new_state)
+    #     else:
+    #         new_state.messages.append(
+    #             AIMessage(content="No tools available. Responding directly."))
+    #     return new_state
 
     max_attempts = 2
     attempt = 0
@@ -91,8 +90,8 @@ async def invoke_tool(message, bind_tools, state: GraphState, adaptor: Adaptor =
         should_recall = critique(
             user_input, finalized_result.agent_response)
 
-        if should_recall and adaptor:
-            maybe_new_state = await send_request_to_others(message, new_state, adaptor)
+        if should_recall:
+            maybe_new_state = await send_request_to_others(message, new_state)
             if isinstance(maybe_new_state, GraphState):
                 new_state = maybe_new_state
 
@@ -121,7 +120,7 @@ async def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphS
                 continue
             nested_args = nested.get("args", {})
             nested_args["state"] = state
-            state = execute_tool(nested_name, nested_args, bind_tools, state)
+            state = await execute_tool(nested_name, nested_args, bind_tools, state)
 
     result = await tool_to_invoke["invoke"].ainvoke(args)
     new_state = command(tool_name, result)
@@ -161,31 +160,60 @@ def get_tool_name_list(message, state: GraphState) -> list[tuple[str, dict]]:
     return tool_name_args
 
 
-async def send_request_to_others(message, state: GraphState, adaptor) -> GraphState:
+async def send_request_to_others(message, state: GraphState) -> GraphState:
     user_input = get_user_input()
     tool_registry = get_tool_registry()
     tool_names = list(tool_registry.keys())
 
-    state.logs.append("[invoke_tool] No tools bound, querying directory agent")
+    try:
+        adaptor = await Adaptor.get_adaptor(
+            agent_id="main_agent",
+            description="Interactive client",
+            capabilities=["qa", "summary"]
+        )
 
-    await adaptor.send_message({
-        "message_type": "message",
-        "recipient_id": "DirectoryAgent",
-        "sender_id": adaptor.connection.agent_id,
-        "message": user_input,
-    }, timeout=15.0)
+        if not getattr(adaptor, "_started", False):
+            await adaptor.start()
+            await asyncio.sleep(0.5)
 
-    # can we have another field to put real tool response?
-    agent_response: ToolReturnClass = await adaptor.receive_message()
+        state.logs.append("[invoke_tool] Sending request to DirectoryAgent")
 
-    # later i can filter the true agent response?
-    if agent_response and agent_response.meta["tool_name"] in tool_names:
-        response_content = agent_response.agent_response
+        try:
+            await adaptor.send_message({
+                "message_type": "message",
+                "recipient_id": "DirectoryAgent",
+                "sender_id": adaptor.connection.agent_id,
+                "message": user_input,
+            })
+        except Exception as e:
+            logging.error(f"Error sending message: {e}")
 
-        state.messages.append(AIMessage(content=response_content))
-    else:
+        try:
+            agent_response: ToolReturnClass = await asyncio.wait_for(
+                adaptor.receive_message(),
+                timeout=30.0
+            )
+
+            if agent_response and agent_response.meta.get("tool_name") in tool_names:
+                response_content = agent_response.agent_response
+                state.messages.append(AIMessage(content=response_content))
+            else:
+                state.messages.append(
+                    AIMessage(
+                        content=agent_response.agent_response)
+                )
+        except asyncio.TimeoutError:
+            logging.error("Timeout waiting for response from DirectoryAgent")
+            state.messages.append(
+                AIMessage(
+                    content="Request timeout - DirectoryAgent not responding")
+            )
+
+    except Exception as e:
+        logging.error(
+            f"Error communicating with other agents: {e}", exc_info=True)
         state.messages.append(
-            AIMessage(content="Unable to process request - no agents available")
+            AIMessage(content=f"Communication error: {str(e)}")
         )
 
     return state

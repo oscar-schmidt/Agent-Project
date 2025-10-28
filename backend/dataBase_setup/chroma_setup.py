@@ -17,7 +17,6 @@ CHROMA_PATH = os.getenv("CHROMA_PATH")
 PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 
-@log_decorator
 def get_or_create_doc_collection():
     state = StateManager.get_state()
 
@@ -37,7 +36,6 @@ def get_or_create_doc_collection():
     return collection
 
 
-@log_decorator
 def get_all_collection_name():
     client = PersistentClient(path=CHROMA_PATH)
     collections = client.list_collections()
@@ -45,7 +43,6 @@ def get_all_collection_name():
     return collection_names_list
 
 
-@log_decorator
 def get_or_create_summary_collection(state: GraphState):
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
@@ -62,7 +59,6 @@ def get_or_create_summary_collection(state: GraphState):
     return collection
 
 
-@log_decorator
 def get_collection(collection_name: str):
     chroma_client = PersistentClient(path=CHROMA_PATH)
     try:
@@ -74,7 +70,6 @@ def get_collection(collection_name: str):
         return None
 
 
-@log_decorator
 def insert_data_row(data: str, embedding: list[float], metadata: Meta):
     collection = get_or_create_doc_collection()
 
@@ -104,7 +99,6 @@ def insert_data_row(data: str, embedding: list[float], metadata: Meta):
     #         f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
 
 
-@log_decorator
 def insert_pdf_summary(state: GraphState) -> GraphState:
 
     if state.summary_state.final_summary:

@@ -13,9 +13,7 @@ load_dotenv()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-@log_decorator
 class finalized_tool(BaseTool):
-    """Respond to user queries"""
 
     async def ainvoke(self, args: dict) -> ToolReturnClass:
         return self.invoke(args)
@@ -24,38 +22,44 @@ class finalized_tool(BaseTool):
         state: GraphState = args["state"]
         user_input = get_user_input()
 
-        messages = []
+        recent_msgs = state.messages[-3:] if len(
+            state.messages) > 3 else state.messages
 
-        system_prompt = SYSTEM_PROMPT_LIST.finalized_tool_prompt
+        latest_tool_outputs = []
+        if hasattr(state, "tool_outputs") and state.tool_outputs:
+            latest_tool_outputs = [
+                tool_response for tool_response in state.tool_outputs[-2:] if tool_response.get("agent_response")
+            ]
 
-        messages.append({"role": "system", "content": system_prompt})
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT_LIST.finalized_tool_prompt}]
 
-        for msg in state.messages:
+        for msg in recent_msgs:
             if isinstance(msg, HumanMessage):
                 messages.append({"role": "user", "content": msg.content})
             elif isinstance(msg, AIMessage):
                 messages.append({"role": "assistant", "content": msg.content})
 
-        if hasattr(state, "tool_outputs") and state.tool_outputs:
-            for tool_output in state.tool_outputs:
-                if tool_output.get("agent_response"):
-                    messages.append({
-                        "role": "user",
-                        "content": f"[Tool Output: {tool_output['tool']}] {tool_output['agent_response']}"
-                    })
+        for tool_output in latest_tool_outputs:
+            tool_name = tool_output.get("tool", "unknown_tool")
+            agent_response = tool_output.get("agent_response", "")
+            messages.append({
+                "role": "assistant",
+                "content": f"[Tool Output - {tool_name}] {agent_response}"
+            })
 
         messages.append({
             "role": "user",
-            "content": user_input or "Generate final answer based on context and tool outputs."
+            "content": user_input or "Please answer concisely based on the latest tool results."
         })
 
         response = chat(OLLAMA_MODEL, messages)
+        content = getattr(response.message, "content", None) or "No response."
 
-        ai_message_content = response.message.content if response.message and response.message.content else "No response"
-        state.messages.append(AIMessage(content=ai_message_content))
+        state.messages.append(AIMessage(content=content))
 
         return ToolReturnClass(
             state=state,
-            agent_response=response.message.content if response.message.content else "No response",
+            agent_response=content,
             meta={"tool_name": "finalized_tool"}
         )

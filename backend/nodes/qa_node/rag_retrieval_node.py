@@ -12,7 +12,6 @@ EMBED_MODEL = os.getenv("EMBED_MODEL")
 TOP_K = int(os.getenv("TOP_K", 50))
 
 
-@log_decorator
 def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[List[DocTextClass], str, float]:
     try:
         num = collection.count()

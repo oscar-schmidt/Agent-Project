@@ -13,7 +13,6 @@ SUMMARY_MIN_LENGTH = int(os.getenv("SUMMARY_MIN_LENGTH", 1000))
 SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH", 2000))
 
 
-@log_decorator
 def get_summary_node(state: GraphState) -> GraphState:
     user_input = get_user_input()
     collectin_name = get_collection_name(user_input)

@@ -55,7 +55,6 @@ def log_decorator(function):
         return sync_wrapper
 
 
-@log_decorator
 def get_chunk(data: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -64,7 +63,6 @@ def get_chunk(data: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     return splitter.split_text(data)
 
 
-@log_decorator
 def get_embedding(chunk: str):
     if isinstance(chunk, str):
         chunk = [chunk]
@@ -87,7 +85,6 @@ def load_model():
     return SentenceTransformer(model_name_or_path=EMBED_MODEL)
 
 
-@log_decorator
 def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_len: Optional[int] = None) -> str:
     single_chunk_len = len(single_chunk.split())
     max_new = max_len if max_len else max(1, single_chunk_len // 2)
@@ -105,7 +102,6 @@ def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_
     return ""
 
 
-@log_decorator
 def clean_text(text: str) -> str:
     if pd.isna(text):
         return ""

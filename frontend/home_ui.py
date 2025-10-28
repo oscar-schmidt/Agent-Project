@@ -2,7 +2,6 @@ import asyncio
 import os
 from nicegui import ui
 import tempfile
-from Server.adaptor import Adaptor
 from backend.dataBase_setup.chroma_setup import get_all_collection_name
 from backend.model.states.StateManager import StateManager
 from backend.model.states.graph_state.GraphState import GraphState
@@ -16,17 +15,17 @@ state_initialized = False
 
 
 @ui.refreshable
-def render_chat_section(adaptor: Adaptor):
+def render_chat_section():
     if not state_initialized:
         ui.label("Loading chat state...")
 
-        async def background_init(adaptor):
+        async def background_init():
             global state_initialized
-            await initialize_state(adaptor)
+            await initialize_state()
             state_initialized = True
             render_chat_section.refresh()
 
-        asyncio.get_event_loop().create_task(background_init(adaptor))
+        asyncio.create_task(background_init())
         return
 
     state = StateManager.get_state()
@@ -52,22 +51,22 @@ def render_chat_section(adaptor: Adaptor):
 
             ui.button('Send', on_click=lambda e: asyncio.create_task(
                 on_chat_submit_wrapper(
-                    user_input, chat_scroll, chat_content, adaptor)
+                    user_input, chat_scroll, chat_content)
             )).classes('mt-4')
 
             user_input.on('keydown.enter', lambda e: asyncio.create_task(
                 on_chat_submit_wrapper(
-                    user_input, chat_scroll, chat_content, adaptor)
+                    user_input, chat_scroll, chat_content)
             ))
 
 
-async def on_chat_submit_wrapper(user_input, chat_scroll, chat_content, adaptor):
+async def on_chat_submit_wrapper(user_input, chat_scroll, chat_content):
     text = user_input.value.strip()
     user_input.value = ""
-    await on_chat_submit(text, chat_scroll, chat_content, adaptor)
+    await on_chat_submit(text, chat_scroll, chat_content)
 
 
-async def on_chat_submit(text, chat_scroll, chat_content, adaptor):
+async def on_chat_submit(text, chat_scroll, chat_content):
     if not text:
         return
 
@@ -85,7 +84,7 @@ async def on_chat_submit(text, chat_scroll, chat_content, adaptor):
 
     chat_scroll.scroll_to(percent=1.0)
 
-    compiled_graph = await get_graph(adaptor)
+    compiled_graph = await get_graph()
 
     config = {
         "configurable": {
@@ -176,8 +175,8 @@ def render_collection_list():
     StateManager.update_state(state)
 
 
-async def initialize_state(adaptor: Adaptor):
-    compiled_graph = await get_graph(adaptor)
+async def initialize_state():
+    compiled_graph = await get_graph()
     config = {"configurable": {"thread_id": "123"}}
 
     try:

@@ -12,7 +12,6 @@ SQL_PATH = os.getenv("SQL_PATH")
 read_config = {"configurable": {"thread_id": "123"}}
 
 
-@log_decorator
 def create_checkpoint_memory():
     conn = sqlite3.connect(SQL_PATH, check_same_thread=False)
     return SqliteSaver(conn)

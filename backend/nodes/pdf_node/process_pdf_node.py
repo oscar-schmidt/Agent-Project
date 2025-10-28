@@ -13,7 +13,6 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 200))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 100))
 
 
-@log_decorator
 async def process_pdf_node(state: GraphState) -> dict:
     pdf = fitz.open(state.qa_state.doc_path)
     pdf_text_list: list[DocTextClass] = []

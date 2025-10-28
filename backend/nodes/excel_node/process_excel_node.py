@@ -11,7 +11,6 @@ from backend.utils import clean_text, get_embedding, log_decorator
 load_dotenv()
 
 
-@log_decorator
 async def process_excel_node(state: GraphState) -> GraphState:
     cols = ['ReviewID', 'Reviewer', 'Date', 'ReviewText',
             'ErrorSummary', 'ErrorType', 'Criticality', 'Rationale']

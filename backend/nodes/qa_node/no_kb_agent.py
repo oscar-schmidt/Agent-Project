@@ -12,7 +12,6 @@ load_dotenv()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-@log_decorator
 def no_kb_agent(state: GraphState) -> GraphState:
     system_input = SYSTEM_MESSAGE_LIST.top_k_kb_not_found_prompt
     response = chat(

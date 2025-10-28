@@ -11,7 +11,6 @@ load_dotenv()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-@log_decorator
 def chat_agent(state: GraphState) -> GraphState:
     user_input = get_user_input()
 

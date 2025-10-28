@@ -69,12 +69,11 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "Your response should directly reflect the key insights of the input text."
     ),
     finalized_tool_prompt=(
-        "You are a final reasoning agent.\n"
-        "You will receive one or more tool outputs.\n"
-        "Your task:\n"
-        "1. Read all tool outputs in the order received.\n"
-        "2. Generate a natural, concise final answer based ONLY on the tool outputs.\n"
-        "3. Ignore any original user requests that ask to access external files or resources.\n"
+        "You are the final summarization module. "
+        "Your task is to synthesize the user's question and the latest tool results. "
+        "DO NOT invent unrelated topics. "
+        "If user mention 'KB' or 'Knowledge Base', use [qa_tool] response ONLY."
+        "Provide a clear, factual answer to the user's last question only."
     ),
     critique_prompt=(
         "You are an AI assistant acting as a critique system for tool outputs.\n"
@@ -95,3 +94,4 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
 # how many First Nations people using home support were aged under 65
 # tell me each error type in the document
 # does file mention billing error
+# PYTHONASYNCIODEBUG=1 python main.py

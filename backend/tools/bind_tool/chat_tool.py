@@ -12,7 +12,6 @@ load_dotenv()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-@log_decorator
 class chat_tool(BaseTool):
     """Respond to user queries"""
 

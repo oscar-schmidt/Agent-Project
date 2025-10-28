@@ -12,7 +12,6 @@ load_dotenv()
 SQL_PATH = os.getenv("SQL_PATH")
 
 _memory_instance = None
-_compiled_graph = None
 
 
 async def get_memory():
@@ -24,26 +23,16 @@ async def get_memory():
     return _memory_instance
 
 
-async def get_graph(adaptor: Adaptor = None):
-    global _compiled_graph, _adaptor_instance
+async def get_graph():
 
-    if _compiled_graph is None:
-        if adaptor is None:
-            raise ValueError(
-                "adaptor must be provided for first initialization")
+    graph = StateGraph(GraphState)
 
-        _adaptor_instance = adaptor
-        graph = StateGraph(GraphState)
+    graph.add_node("tool_agent", tool_agent, is_async=True)
 
-        async def tool_agent_node(s: GraphState) -> GraphState:
-            return await tool_agent(s, adaptor=_adaptor_instance)
+    graph.add_edge(START, "tool_agent")
+    graph.add_edge("tool_agent", END)
 
-        graph.add_node("tool_agent", tool_agent_node, is_async=True)
-
-        graph.add_edge(START, "tool_agent")
-        graph.add_edge("tool_agent", END)
-
-        memory = await get_memory()
-        _compiled_graph = graph.compile(checkpointer=memory)
+    memory = await get_memory()
+    _compiled_graph = graph.compile(checkpointer=memory)
 
     return _compiled_graph

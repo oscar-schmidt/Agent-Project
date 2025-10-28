@@ -7,7 +7,6 @@ from backend.utils import log_decorator
 from langchain_core.messages import AIMessage, HumanMessage
 
 
-@log_decorator
 class qa_tool(BaseTool):
 
     def __init__(self):
