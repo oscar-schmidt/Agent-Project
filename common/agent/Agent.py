@@ -7,6 +7,7 @@ from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
 from common.memory.semantic import Semantic
 from common.memory.episodic import Episode
+from config.config_helper import get_model_config
 from common.stores.QdrantStore import QdrantStore
 import sqlite3
 
@@ -14,13 +15,12 @@ class Agent:
     """An Agent class"""
     def __init__(self, tools: List[Any],name: str, prompt: str):
         """init method for class Agent requires tools as a list of tools"""
+        model_config = get_model_config()
         self.name = name
         self.prompt= prompt
-        self.llm = init_chat_model("ollama:qwen3:8b") #updated this for ollama as "ollama:model_name"
-        self.llm_openai = init_chat_model("gpt-4o-mini")
+        self.llm = init_chat_model(f"{model_config["provider"]}:{model_config['model']}")
         self.tools = tools
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
-        self.llm_openai_tools = self.llm_openai.bind_tools(self.tools)
         self.manager =  create_memory_manager(
                 "gpt-4o-mini",
                 schemas=[Episode, Semantic],
@@ -29,8 +29,6 @@ class Agent:
         #self.store = QdrantStore(collection_name="WebAgent") #don't uncomment if you don't have qdrant running
 
     def planner(self, state: State):
-        #state["tools"] = self.tools
-       # print(self.friends)
         planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
             (
                 "system",
@@ -38,7 +36,7 @@ class Agent:
                 f"These are the tools available for use {self.tools}"
             )
         ]
-        plan = self.llm_openai_tools.invoke(planner_messages).content
+        plan = self.llm_with_tools.invoke(planner_messages).content
 
         state["plan"] = plan
 
@@ -51,7 +49,7 @@ class Agent:
         if state.get('critique') and state['critique'] != 'None':
             system_prompt += f"you must revise your previous answer based on the following critique: {state['critique']}"
         messages_with_prompt = [("system", system_prompt)] + state["messages"]
-        ai_response = self.llm_openai_tools.invoke(messages_with_prompt)
+        ai_response = self.llm_with_tools.invoke(messages_with_prompt)
         return {"messages":[ai_response]}
 
 

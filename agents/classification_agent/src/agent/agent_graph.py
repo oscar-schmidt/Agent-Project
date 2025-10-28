@@ -28,7 +28,7 @@ from agents.classification_agent.src.agent.tools import (
     log_reviews_to_notion,
     get_current_datetime
 )
-
+from config.config_helper import get_model_config
 
 class ReviewAgent:
     """A Review Classification Agent class for analyzing customer reviews"""
@@ -43,20 +43,14 @@ class ReviewAgent:
             enable_critique: Whether to enable the critique/self-review loop
             enable_memory: Whether to enable long term memory (needs qdrant running)
         """
+        model_config = get_model_config()
+        self.llm = init_chat_model(f"{model_config["provider"]}:{model_config['model']}")
         self.name = name
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
 
-        # Initialize Claude LLM (Anthropic)
-        self.llm = ChatAnthropic(
-            model=AGENT_MODEL,
-            anthropic_api_key=ANTHROPIC_API_KEY,
-            temperature=AGENT_TEMPERATURE,
-        )
 
-        # OpenAI LLM (commented out - teammate uses this)
-        # self.llm = init_chat_model("gpt-4o-mini")
 
 
         # Define available tools

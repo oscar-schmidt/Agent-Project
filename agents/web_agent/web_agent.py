@@ -13,7 +13,7 @@ from common.tools.databse import DatabaseTool
 from common.tools.date_time import DateTime
 from common.tools.communicate import create_comm_tool
 from common.tools.csv import CSVTool
-from common.tools.knowledgebase import retriever_tool
+#from common.tools.knowledgebase import retriever_tool
 from common.utils import IngestKnowledge
 import os
 logging.basicConfig(level=logging.INFO,
@@ -82,7 +82,7 @@ class AgentManager():
             "4.  **Provide the Final Answer**: Only provide the final answer to the user once all steps of your plan are complete."
         )
 
-        tools = [retriever_tool, communicate, websearch, webscrape, datetime, csv]
+        tools = [communicate, websearch, webscrape, datetime, csv]
         asyncio.create_task(self.worker())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 

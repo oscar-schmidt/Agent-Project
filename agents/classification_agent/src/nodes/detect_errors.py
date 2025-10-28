@@ -3,8 +3,8 @@ import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic
-from src.utils import RawReview, DetectedError
-from src.nodes.category_normalizer import get_normalizer
+from agents.classification_agent.src.utils import RawReview, DetectedError
+from agents.classification_agent.src.nodes.category_normalizer import get_normalizer
 
 # using claude for better accuracy - less hallucination than ollama
 
@@ -102,7 +102,7 @@ FEWSHOT_ASSISTANT_2 = """{
 
 def make_llm(model: str = "claude-3-5-sonnet-20241022"):
     # use claude for better accuracy
-    from src.config import ANTHROPIC_API_KEY
+    from agents.classification_agent.src.config import ANTHROPIC_API_KEY
     return ChatAnthropic(
         model=model,
         anthropic_api_key=ANTHROPIC_API_KEY,
