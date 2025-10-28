@@ -461,8 +461,6 @@ async def create_agent_app(enable_critique: bool = False, enable_memory: bool = 
     Returns:
         Compiled agent graph ready for execution
     """
-    #create database connection
-    conn = await aiosqlite.connect(AGENT_CHECKPOINT_DB)
 
     #create agent instance
     agent = SQL2PDFAgent(
