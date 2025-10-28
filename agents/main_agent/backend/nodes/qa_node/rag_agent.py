@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
-from backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from ollama import chat
 from langchain_core.messages import AIMessage
-from backend.utils import get_user_input, log_decorator
+from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_MESSAGE_LIST
 load_dotenv()
 

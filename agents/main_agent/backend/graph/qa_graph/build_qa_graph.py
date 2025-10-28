@@ -1,9 +1,9 @@
 from langgraph.graph import StateGraph, START, END
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.nodes.utils.chat_agent import chat_agent
-from backend.nodes.qa_node.no_kb_agent import no_kb_agent
-from backend.nodes.qa_node.rag_agent import rag_agent
-from backend.nodes.qa_node.rag_router import rag_router
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.nodes.utils.chat_agent import chat_agent
+from agents.main_agent.backend.nodes.qa_node.no_kb_agent import no_kb_agent
+from agents.main_agent.backend.nodes.qa_node.rag_agent import rag_agent
+from agents.main_agent.backend.nodes.qa_node.rag_router import rag_router
 
 
 def build_qa_graph():

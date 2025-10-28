@@ -1,4 +1,4 @@
-from backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 
 
 class StateManager:

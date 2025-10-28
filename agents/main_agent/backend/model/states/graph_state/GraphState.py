@@ -1,8 +1,8 @@
 from typing import Annotated, Any
 from pydantic import BaseModel, Field, root_validator
-from backend.model.states.graph_state.SummaryState import SummaryState
-from backend.model.states.qa_state.DocState import DocState
-from backend.model.stores.MessageStore import MessageStore
+from agents.main_agent.backend.model.states.graph_state.SummaryState import SummaryState
+from agents.main_agent.backend.model.states.qa_state.DocState import DocState
+from agents.main_agent.backend.model.stores.MessageStore import MessageStore
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph.message import add_messages
 

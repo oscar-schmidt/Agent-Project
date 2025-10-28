@@ -1,9 +1,10 @@
 import asyncio
+from agents.main_agent.backend.tools.bind_tool.qa_tool import qa_tool
+from agents.main_agent.backend.tools.bind_tool.summary_tool import summary_tool
+from common.tools.communicate import create_comm_tool
 from common.ChatManager import ChatManager
 import logging
 from common.ConnectionManager import ConnectionManager
-from common.tools.communicate import create_comm_tool
-from common.tools.knowledgebase import retriever_tool
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -15,7 +16,7 @@ class AgentManager():
         self.connection_manager = ConnectionManager(
             agent_id="StrategistAgent",
             description="An agent that can analyze, plan, and strategize using advanced reasoning skills",
-            capabilities=["DatabaseRetrival", "KnowledgeRetrival"])
+            capabilities=[])
         self.chat_manager = ChatManager(name="StrategistAgent")
         self.task_queue = asyncio.Queue()
         self.user_input = None
@@ -51,12 +52,11 @@ class AgentManager():
             logging.error(f"Failed to connect: {e}")
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
-        communicate = create_comm_tool(
-            id="StrategistAgent",
-            connection=self.connection_manager,
-        )
 
-        tools = [communicate]
+        qa_tool_ = qa_tool()
+        summary_tool_ = summary_tool()
+        communicate = create_comm_tool(id ="StrategistAgent",connection=self.connection_manager)
+        tools =[qa_tool_, summary_tool_, communicate]
         asyncio.create_task(self.worker())
         #asyncio.create_task(self.messanger())
         await self.chat_manager.setup(tools=tools, prompt="", type="main")

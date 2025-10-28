@@ -31,21 +31,23 @@ SYSTEM_LOG_LIST = SimpleNamespace(
 )
 
 SYSTEM_PROMPT_LIST = SimpleNamespace(
-    default_prompt="You are a helpful assistant.",
-    tool_router_prompt=(
-        "You are a Tool Router.\n"
-        "Available tools: {tool_names}\n"
-        "Decide which tool to use based on the user input. user_input: {user_input}\n"
-        "You can choose to call only one tool or both tools if relevant.\n"
-        "Use the tool by calling it directly; do not just return JSON.\n"
-        "If no tool is needed, respond naturally to the user.\n"
-        "- Respond ONLY with a valid JSON object in this exact format:\n"
+    default_prompt=(
+        "You are a helpful assistant.\n"
+        "Available tools: {tool_names}\n\n"
+
+        "Your task is to analyze the user input and decide on one of two actions:\n"
+        "1.  **Respond Conversationally:** If the user's input is a greeting, a question, or a statement that does not require a tool, respond directly to the user as a helpful chatbot.\n"
+        "2.  **Call Tools:** If the user's input requires you to use one or more tools to get information, you must respond *only* with a valid JSON object.\n\n"
+
+        "--- INSTRUCTIONS FOR CONVERSATIONAL RESPONSE ---\n"
+        "If you decide to respond conversationally, just provide a natural, text-based response. Do not wrap your response in JSON. Do not mention tools.\n\n"
+
+        "--- INSTRUCTIONS FOR TOOL CALLS ---\n"
+        "If you decide to call tools, respond ONLY with a valid, parseable JSON object in this exact format. Do not include any extra text, explanation, or conversational chat before or after the JSON.\n"
         "  {{'tools': [\n"
         "      {{'tool_name': '<tool_name>', 'args': {{}}}},\n"
         "      ...\n"
         "  ]}}\n"
-        "- Do not include any extra text or explanation.\n"
-        "- JSON must be parseable.\n"
     ),
     final_summary_prompt=(
         "You are an AI tasked with reading any given text input, which could be a user feedback summary, "

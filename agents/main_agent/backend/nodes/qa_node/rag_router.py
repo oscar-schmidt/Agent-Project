@@ -1,19 +1,14 @@
 import os
 from dotenv import load_dotenv
 
-<<<<<<<< HEAD:agents/main_agent/backend/depricated/graph/qa_graph/rag_router.py
-from agents.main_agent.backend.embedding.chroma_setup import get_all_collection_name, get_collection, get_or_create_summary_collection
+from agents.main_agent.backend.utils import get_embedding, get_user_input, log_decorator
+
+from agents.main_agent.backend.dataBase_setup.chroma_setup import get_all_collection_name, get_collection
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
-
-from agents.main_agent.backend.utils import get_embedding, get_user_input, log_decorator
-========
-from backend.dataBase_setup.chroma_setup import get_all_collection_name, get_collection
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
-from backend.utils import get_embedding, get_user_input
+from agents.main_agent.backend.utils import get_embedding, get_user_input
 from constants import SYSTEM_LOG_LIST
->>>>>>>> origin/staging:agents/main_agent/backend/nodes/qa_node/rag_router.py
+
 
 
 load_dotenv()

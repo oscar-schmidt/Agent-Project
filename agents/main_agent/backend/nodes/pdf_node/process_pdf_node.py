@@ -1,24 +1,11 @@
-<<<<<<<< HEAD:agents/main_agent/backend/nodes/pdf_node/chunk_pdf_node.py
-from attr import asdict
-
-from agents.main_agent.backend.depricated.embedding.chroma_setup import insert_data_row
-from agents.main_agent.backend.model.states.StateManager import StateManager
+from agents.main_agent.backend.dataBase_setup.chroma_setup import insert_data_row
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 import fitz
 import os
 from dotenv import load_dotenv
 from agents.main_agent.backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
-from agents.main_agent.backend.utils import get_embedding, single_chunk_summary, get_chunk, clean_text, log_decorator
-========
+from agents.main_agent.backend.utils import get_embedding, get_chunk, clean_text, log_decorator
 
-from backend.dataBase_setup.chroma_setup import insert_data_row
-from backend.model.states.graph_state.GraphState import GraphState
-import fitz
-import os
-from dotenv import load_dotenv
-from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
-from backend.utils import get_embedding, get_chunk, clean_text, log_decorator
->>>>>>>> origin/staging:agents/main_agent/backend/nodes/pdf_node/process_pdf_node.py
 
 load_dotenv()
 

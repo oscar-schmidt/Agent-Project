@@ -2,9 +2,9 @@ from typing import List
 import os
 from dotenv import load_dotenv
 import numpy as np
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
-from backend.utils import get_embedding, log_decorator
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
+from agents.main_agent.backend.utils import get_embedding, log_decorator
 
 load_dotenv()
 

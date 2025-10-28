@@ -2,9 +2,9 @@ import copy
 import os
 from dotenv import load_dotenv
 
-from backend.dataBase_setup.chroma_setup import get_all_collection_name, get_collection, insert_pdf_summary
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.utils import get_embedding, get_user_input, single_chunk_summary, clean_text, log_decorator
+from agents.main_agent.backend.dataBase_setup.chroma_setup import get_all_collection_name, get_collection, insert_pdf_summary
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.utils import get_embedding, get_user_input, single_chunk_summary, clean_text, log_decorator
 
 load_dotenv()
 

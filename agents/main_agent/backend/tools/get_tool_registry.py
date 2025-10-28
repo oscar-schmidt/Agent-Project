@@ -1,9 +1,9 @@
-from agents.main_agent.backend.tools.bind_tool.chat_tool import chat_tool
+from agents.main_agent.backend.tools.bind_tool.communicate_tool import communicate_tool
 from agents.main_agent.backend.tools.bind_tool.qa_tool import qa_tool
 from agents.main_agent.backend.tools.bind_tool.summary_tool import summary_tool
 
 
-def get_tool_registry():
+def get_tool_registry(websocket):
     return {
         "qa_tool": {
             "tool": qa_tool,
@@ -17,16 +17,13 @@ def get_tool_registry():
             "invoke": summary_tool(),
             "name": "summary_tool",
             "priority": 2,
-            "condition": lambda state, user_input: (
-                any(kw in user_input.lower()
-                    for kw in ["summary", "abstract", "overview"])
-            ),
+            "condition": lambda state, user_input: True
         },
-        "chat_tool": {
-            "tool": chat_tool,
-            "invoke": chat_tool(),
-            "name": "chat_tool",
+        "communicate_tool": {
+            "tool": communicate_tool,
+            "invoke": communicate_tool(websocket=websocket),
+            "name": "communicate_tool",
             "priority": 3,
-            "condition": lambda state, user_input: False
+            "condition": lambda state, user_input: True
         }
     }

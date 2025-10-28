@@ -2,10 +2,10 @@ from dotenv import load_dotenv
 from ollama import chat
 from langchain_core.messages import AIMessage, HumanMessage
 import os
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
-from backend.tools.base_tool import BaseTool
-from backend.utils import get_user_input, log_decorator
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
+from agents.main_agent.backend.tools.base_tool import BaseTool
+from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_PROMPT_LIST
 
 load_dotenv()

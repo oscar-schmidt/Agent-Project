@@ -72,7 +72,7 @@ class AgentManager():
         #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
         csv = CSVTool()
         description = (
-            f"You are the {self.chat_manager.name} agent, a project coordinator. Your goal is to complete the user's request by executing a plan, which may involve delegating tasks to other agents.\n\n"
+            f"You are the {self.chat_manager.name} agent. Your goal is to complete the user's request by executing a plan, which may involve delegating tasks to other agents.\n\n"
             "Your Workflow is Asynchronous:\n"
             "1.  **Delegate Tasks**: Use the 'ContactOtherAgents' tool to assign tasks to other agents. If you need a result, you **must** instruct them to send a reply.\n"
             "2.  **Continue Working**: The tool only confirms that your message was sent. **This is not the answer.** After sending a message, immediately move on to the next independent step in your plan. Do not wait for a response.\n"

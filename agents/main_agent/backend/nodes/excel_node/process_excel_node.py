@@ -2,10 +2,10 @@
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from backend.dataBase_setup.chroma_setup import insert_data_row
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.model.states.qa_state.DocTextClass import DocTextClass, Meta
-from backend.utils import clean_text, get_embedding, log_decorator
+from agents.main_agent.backend.dataBase_setup.chroma_setup import insert_data_row
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.qa_state.DocTextClass import DocTextClass, Meta
+from agents.main_agent.backend.utils import clean_text, get_embedding, log_decorator
 
 
 load_dotenv()

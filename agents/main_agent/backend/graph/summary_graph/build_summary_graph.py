@@ -2,9 +2,9 @@ import os
 import sqlite3
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from backend.model.states.graph_state.GraphState import GraphState
-from backend.nodes.summary_node.get_summary_node import get_summary_node
-from backend.nodes.utils.chat_agent import chat_agent
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.nodes.summary_node.get_summary_node import get_summary_node
+from agents.main_agent.backend.nodes.utils.chat_agent import chat_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 load_dotenv()

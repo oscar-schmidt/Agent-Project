@@ -12,9 +12,9 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from functools import wraps
 from transformers import pipeline
-from backend.model.states.StateManager import StateManager
+from agents.main_agent.backend.model.states.StateManager import StateManager
 from langchain_core.messages import HumanMessage
-from backend.model.states.graph_state.GraphState import GraphState
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 
 load_dotenv()
 
