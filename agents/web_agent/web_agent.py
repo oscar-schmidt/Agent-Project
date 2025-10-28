@@ -82,9 +82,8 @@ class AgentManager():
             "4.  **Provide the Final Answer**: Only provide the final answer to the user once all steps of your plan are complete."
         )
 
-        tools = [retriever_tool]
+        tools = [retriever_tool, communicate, websearch, webscrape, datetime, csv]
         asyncio.create_task(self.worker())
-        #asyncio.create_task(self.messanger())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
 application = AgentManager()
