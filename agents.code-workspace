@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "agents",
+			"path": "../agents"
+		},
+		{
+			"name": "Github",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
