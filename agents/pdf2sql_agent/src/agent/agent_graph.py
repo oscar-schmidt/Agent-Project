@@ -11,7 +11,7 @@ from agents.pdf2sql_agent.src.config import (
 )
 from agents.pdf2sql_agent.src.agent.agent_state import SQL2PDFAgentState
 from langgraph.prebuilt import ToolNode
-
+from config.config_helper import get_model_config
 
 
 from agents.pdf2sql_agent.src.agent.prompts import get_system_prompt
@@ -37,20 +37,14 @@ class SQL2PDFAgent:
             enable_critique: Whether to enable the critique/self-review loop
             enable_memory: Whether to enable long term memory (needs qdrant running)
         """
+        model_config = get_model_config()
+        self.llm = init_chat_model(f"{model_config["provider"]}:{model_config['model']}")
         self.name = name
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
-        self.llm = init_chat_model("gpt-4o-mini")
-        # Initialize Claude LLM
-        """
-        I don't have access to this
-        self.llm = ChatAnthropic(
-            model=AGENT_MODEL,
-            anthropic_api_key=ANTHROPIC_API_KEY,
-            temperature=AGENT_TEMPERATURE,
-        )
-        """
+
+
 
 
         # Define available tools

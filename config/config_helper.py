@@ -8,8 +8,6 @@ logging.basicConfig(level=logging.INFO,
 
 def get_model_config():
     path = pathlib.Path(__file__).parent.joinpath("config.yaml")
-    logging.info(f"Config path: {path}")
-
     try:
         with open(path, 'r') as f:
             config = yaml.safe_load(f)

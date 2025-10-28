@@ -32,7 +32,8 @@ qdrant_storage/
 *.swp
 *.swo
 *~
-
+#pycahce
+__pycache__
 # OS files
 .DS_Store
 Thumbs.db
@@ -61,3 +62,11 @@ htmlcov/
 
 # Category mappings (generated files)
 agents/classification_agent/data/category_mappings.json
+
+agents.code-workspace
+.db
+.
+/requirments.txt
+report.pdf
+.pdf
+
