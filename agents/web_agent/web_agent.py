@@ -68,21 +68,22 @@ class AgentManager():
         websearch = WebSearch()
         webscrape = WebScrape()
         datetime = DateTime()
-        #database = DatabaseTool()
-        #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
+        #memory = MemoryTool()
+
+        # database = DatabaseTool()
         csv = CSVTool()
         description = (
-            f"You are the {self.chat_manager.name} agent, a project coordinator. Your goal is to complete the user's request by executing a plan, which may involve delegating tasks to other agents.\n\n"
-            "Your Workflow is Asynchronous:\n"
-            "1.  **Delegate Tasks**: Use the 'ContactOtherAgents' tool to assign tasks to other agents. If you need a result, you **must** instruct them to send a reply.\n"
-            "2.  **Continue Working**: The tool only confirms that your message was sent. **This is not the answer.** After sending a message, immediately move on to the next independent step in your plan. Do not wait for a response.\n"
-            "3.  **Handle Incoming Replies**: At any time, you may receive a message from another agent. When this happens, you must: \n"
-            "    a. Identify which delegated task the message is a reply to. \n"
-            "    b. Use the information in the message to update your plan or formulate your final answer. \n"
-            "4.  **Provide the Final Answer**: Only provide the final answer to the user once all steps of your plan are complete."
+            f"You are the {self.chat_manager.name} agent, a web research specialist. Your primary goal is to complete the user's request by executing a plan to find, process, and synthesize information from the internet using your web tools.\n\n"
+            "Your Workflow:\n"
+            "1.  **Formulate a Plan**: Analyze the user's request and break it down into a series of steps (e.g., '1. Search for topic X', '2. Scrape relevant URLs', '3. Synthesize findings').\n"
+            "2.  **Execute Web Tasks**: Use your available tools, like `search(query)` or `scrape(url)`, to execute the web-based steps of your plan.\n"
+            "3.  **Analyze and Adapt**: After each tool use, you will receive the results (e.g., search results or scraped content). You must use this information to inform your next action or refine the plan.\n"
+            "4.  **Handle Limitations**: If you analyze the request (or your results) and determine a step is outside your capabilities (e.g., requires file analysis, complex calculations, or non-web information), \n"
+            "you **must** contact the **'DirectoryAgent'** using the 'ContactOtherAgents' tool. Instruct the DirectoryAgent to guide you to the correct specialist agent for help.\n"
+            "5.  **Provide the Final Answer**: Only provide the final, synthesized answer to the user once all steps of your plan (including waiting for replies to any delegated tasks) are complete."
         )
 
-        tools = [retriever_tool, communicate, websearch, webscrape, datetime, csv]
+        tools = [retriever_tool, communicate, websearch, webscrape, datetime]
         asyncio.create_task(self.worker())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
