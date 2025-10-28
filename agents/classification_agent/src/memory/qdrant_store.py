@@ -10,7 +10,7 @@ from .embedding import EmbeddingGenerator
 
 
 class MemoryStore:
-    """vector db for long term memory - uses chromadb (no docker needed)"""
+    """vector db for long term memory - uses chromadb"""
 
     def __init__(
         self,
@@ -45,11 +45,28 @@ class MemoryStore:
         memory_text = self.embedder.memory_to_text(memory)
         embedding = self.embedder.generate(memory_text)
 
-        # check for dupes - 90% similarity
+        # check for dupes - VERY high similarity threshold (0.95+)
+        # Only skip if it's an almost exact duplicate
         if check_duplicates:
-            similar = self.get(memory_text, top_k=1, score_threshold=0.9)
-            if similar:
-                return similar[0]["id"]
+            similar = self.get(memory_text, top_k=1, score_threshold=0.95)
+            if similar and len(similar) > 0:
+                # Double-check: only consider it a duplicate if the text is very similar
+                existing_text = similar[0]["text"]
+                # If the review IDs are different, it's NOT a duplicate
+                if "REV-" in memory_text and "REV-" in existing_text:
+                    # Extract review IDs
+                    import re
+                    new_ids = set(re.findall(r'REV-\d+', memory_text))
+                    existing_ids = set(re.findall(r'REV-\d+', existing_text))
+                    # If different review IDs, NOT a duplicate
+                    if new_ids != existing_ids:
+                        pass  # Continue to store
+                    else:
+                        return similar[0]["id"]  # Same review ID, is a duplicate
+                else:
+                    # For non-review memories, check if score is extremely high
+                    if similar[0]["score"] >= 0.98:
+                        return similar[0]["id"]
 
         memory_id = str(uuid4())
 

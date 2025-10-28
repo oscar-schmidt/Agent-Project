@@ -3,7 +3,8 @@ import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic
-from agents.classification_agent.src.utils import RawReview, DetectedError
+from src.utils import RawReview, DetectedError
+from src.nodes.category_normalizer import get_normalizer
 
 # using claude for better accuracy - less hallucination than ollama
 
@@ -34,13 +35,17 @@ Guidelines for category generation:
   * Software/SaaS: Use categories like "Stability", "Performance", "Authentication", "Billing", "User Interface", "API"
   * Hotel: Use categories like "Room Condition", "Staff", "Amenities", "Cleanliness", "Location", "Check-in"
   * Retail/E-commerce: Use categories like "Product Quality", "Shipping", "Customer Service", "Returns", "Pricing"
+  * Booking/Appointment Services: Use categories like "Booking Process", "Wait Time", "Scheduling", "Customer Service"
   * Other businesses: Generate appropriate categories based on industry
 
-- **Category naming**:
-  * Use 1-3 word category names
-  * Be specific but not too granular
-  * Be consistent - if you use "Food Quality" once, use it again for similar issues
-  * Multiple categories are OK if issue spans multiple areas
+- **Category naming - BE CONSISTENT**:
+  * Use 1-3 word category names that are GENERIC and REUSABLE
+  * Think: "What is the CORE issue?" not specific details
+  * Examples of GOOD categories: "Booking Process", "Wait Time", "Service Quality"
+  * Examples of BAD categories: "3 hour wait", "slow elongated process", "inefficient scheduling"
+  * If multiple reviews mention delays/slowness in the same area, use the SAME category name
+  * Avoid overly specific or one-off category names
+  * Multiple categories OK if issue spans multiple areas (max 2-3)
 
 - **Severity levels** (use EXACTLY one of these values):
   * "Critical" - for severe issues (crashes, data loss, health/safety, system down)
@@ -230,6 +235,10 @@ Return ONLY the JSON object with business_type and errors array. If no issues fo
     items = data.get("errors", [])
     out: List[DetectedError] = []
 
+    # Get category normalizer
+    use_normalizer = os.getenv("USE_CATEGORY_NORMALIZATION", "true").lower() in {"1", "true", "yes"}
+    normalizer = get_normalizer() if use_normalizer else None
+
     if isinstance(items, list):
         for e in items:
             if not isinstance(e, dict):
@@ -238,9 +247,13 @@ Return ONLY the JSON object with business_type and errors array. If no issues fo
             types = e.get("error_type") or []
             if isinstance(types, str):
                 types = [types]
-            # REMOVED: validation against hardcoded TYPES - now accepts any string from LLM
-            # Filter to only keep valid strings, but don't validate against a fixed set
+
             types = [t.strip() for t in types if isinstance(t, str) and t.strip()] or ["Other"]
+
+            # Normalize categories for semantic consistency
+            if normalizer:
+                types = normalizer.normalize_categories(types)
+
             severity = (e.get("severity") or "None").strip()  # Must be: Critical, Major, Minor, Suggestion, None
             rationale = (e.get("rationale") or "").strip()
             if summary:

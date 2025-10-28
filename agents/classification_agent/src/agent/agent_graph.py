@@ -1,13 +1,17 @@
 from typing import Literal
 from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver    # type: ignore 
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver    # type: ignore
 from langchain_core.messages import ToolMessage                  # type: ignore
 import aiosqlite                                                     # type: ignore
 from typing import List, Any
 from agents.classification_agent.src.config import (
     AGENT_CHECKPOINT_DB,
-    AGENT_VERBOSE
+    AGENT_VERBOSE,
+    AGENT_MODEL,
+    ANTHROPIC_API_KEY,
+    AGENT_TEMPERATURE
 )
 from agents.classification_agent.src.agent.agent_state import ReviewAgentState
 from langgraph.prebuilt import ToolNode
@@ -18,6 +22,12 @@ from agents.classification_agent.src.agent.prompts import get_system_prompt
 from agents.classification_agent.src.agent.tools.memory_tool import memory_search_tool
 from agents.classification_agent.src.memory.qdrant_store import QdrantStore
 from agents.classification_agent.src.memory.memory_manager import ClaudeMemoryManager
+from agents.classification_agent.src.agent.tools import (
+    classify_review_criticality,
+    analyze_review_sentiment,
+    log_reviews_to_notion,
+    get_current_datetime
+)
 
 
 class ReviewAgent:
@@ -37,16 +47,16 @@ class ReviewAgent:
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
-        self.llm = init_chat_model("gpt-4o-mini")
-        # Initialize Claude LLM
-        """
-        I don't have access to this
+
+        # Initialize Claude LLM (Anthropic)
         self.llm = ChatAnthropic(
             model=AGENT_MODEL,
             anthropic_api_key=ANTHROPIC_API_KEY,
             temperature=AGENT_TEMPERATURE,
         )
-        """
+
+        # OpenAI LLM (commented out - teammate uses this)
+        # self.llm = init_chat_model("gpt-4o-mini")
 
 
         # Define available tools
@@ -330,16 +340,33 @@ class ReviewAgent:
         try:
             extracted = self.memory_manager.extract(state["messages"])
 
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] Extracted {len(extracted)} memories from conversation")
+                for i, mem in enumerate(extracted, 1):
+                    mem_type = type(mem).__name__
+                    if mem_type == "Episode":
+                        print(f"  {i}. Episode: {mem.observation[:80]}...")
+                    else:
+                        print(f"  {i}. Semantic: {mem.subject} -> {mem.predicate} -> {mem.object}")
+
             stored_count = 0
+            skipped_count = 0
             for memory in extracted:
                 try:
-                    self.memory_store.put(memory, check_duplicates=True)
-                    stored_count += 1
-                except:
-                    pass
+                    mem_id = self.memory_store.put(memory, check_duplicates=True)
+                    # Check if it was actually stored or was a duplicate
+                    if mem_id:
+                        stored_count += 1
+                except Exception as e:
+                    if AGENT_VERBOSE:
+                        print(f"  Error storing memory: {e}")
+                    skipped_count += 1
 
-            if AGENT_VERBOSE and stored_count > 0:
-                print(f"[{self.name}] Stored {stored_count} new memories")
+            if AGENT_VERBOSE:
+                if stored_count > 0:
+                    print(f"[{self.name}] Stored {stored_count} new memories")
+                if skipped_count > 0:
+                    print(f"[{self.name}] Skipped {skipped_count} memories (duplicates or errors)")
 
         except Exception as e:
             if AGENT_VERBOSE:
@@ -443,12 +470,21 @@ async def create_agent_app(enable_critique: bool = False, enable_memory: bool = 
     #create database connection
     conn = await aiosqlite.connect(AGENT_CHECKPOINT_DB)
 
+    # Define the tools list
+    tools = [
+        classify_review_criticality,
+        analyze_review_sentiment,
+        log_reviews_to_notion,
+        get_current_datetime
+    ]
+
     #create agent instance
     agent = ReviewAgent(
         name="ReviewClassificationAgent",
         description=get_system_prompt(),
         enable_critique=enable_critique,
-        enable_memory=enable_memory
+        enable_memory=enable_memory,
+        tools=tools
     )
 
 

@@ -27,19 +27,26 @@ class ClaudeMemoryManager:
             return []
 
         try:
-            system_prompt = """extract memories from this conversation.
+            system_prompt = """CRITICAL: Only extract memories from ACTUAL review data mentioned in this conversation. DO NOT infer, generalize, or create patterns that weren't explicitly present.
 
-extract Episodes (classification experiences):
-- observation: what user requested and review content
-- thoughts: why we chose this classification
-- action: tools called with params
-- result: outcome, user feedback, lessons learned
+extract Episodes (classification experiences) - ONLY if actual review IDs/content were discussed:
+- observation: EXACT review ID and content from the conversation (e.g., "REV-0556: poster design feedback")
+- thoughts: specific reasoning used for THIS review
+- action: actual tools called with actual parameters
+- result: actual outcome and user feedback (if any)
 
-extract Semantics (knowledge facts):
-- subject: main entity (eg "crash keyword", "payment issue")
-- predicate: relationship (eg "indicates_criticality", "correlates_with")
-- object: target value (eg "Critical", "Angry sentiment")
-- context: when applicable (optional)
+extract Semantics (knowledge facts) - ONLY from ACTUAL reviews processed:
+- subject: specific element from the ACTUAL review (e.g., "REV-0557 carbonation issue")
+- predicate: factual relationship observed
+- object: actual classification/sentiment from the review
+- context: the specific review ID or product
+
+RULES:
+1. NEVER create generic patterns like "crash keyword -> Critical" unless you saw an ACTUAL review with that pattern
+2. NEVER infer rules from hypothetical scenarios
+3. If user just asked questions without processing reviews, return empty lists
+4. Include review IDs (REV-XXXX) in all memories for traceability
+5. Skip generic conversations, greetings, or clarifications
 
 return as json:
 {
@@ -47,7 +54,7 @@ return as json:
   "semantics": [{"subject": "...", "predicate": "...", "object": "...", "context": "..."}]
 }
 
-only extract meaningful stuff, skip generic chatter"""
+When in doubt, extract NOTHING rather than hallucinate patterns."""
 
             # format msgs
             convo = []
