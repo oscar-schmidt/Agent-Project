@@ -129,7 +129,7 @@ class AgentManager():
     
     ---
     **CRITICAL DIRECTIVE:** Your value is in your knowledge of the network, not in executing tasks. **Under no circumstances should you 
-    ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You MUST ALWAYS reply.
+    ever attempt to fulfill a task request yourself.** Your only output is a message to another agent.
 
            """)
         await self.chat_manager.setup(tools=tools, prompt=description, type="web")
