@@ -26,14 +26,18 @@ class PDFTool(BaseTool):
 
     api_key: str = ""
     outputPath: str = "report.pdf"
+    query : str = ""
+    question : str = ""
 
     client: Optional[OpenAI] = None
 
-    def __init__(self, api_key: str = None, outputPath: str = None, **kwargs):
+    def __init__(self, api_key: str = None, outputPath: str = "report.pdf", query: str = "", question: str = "", **kwargs):
         super().__init__(**kwargs)
         
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.outputPath = outputPath or "report.pdf"
+        self.query = query
+        self.question = question
 
         self.client = OpenAI(api_key=self.api_key)
 
@@ -79,7 +83,7 @@ class PDFTool(BaseTool):
 
         return response.choices[0].message.content.strip()
     
-    def _build_pdf(self, reportText: str, graph: bool = False, graphPath: str = "TEMPVIS.png"):
+    def _build_pdf(self, reportText: str, graphPath: str, graph: bool = False):
         styles = getSampleStyleSheet()
         story = []
 
@@ -98,22 +102,19 @@ class PDFTool(BaseTool):
         doc = SimpleDocTemplate(self.outputPath, pagesize=letter)
         doc.build(story)
 
-    def _run(self, df: Any, query: str,question: str, x: str = "", y: str = "", graph: bool = False):
+    def _run(self, df: str, query: str, question: str, graphPath: str, x: str = "", y: str = "", graph: bool = False):
         try:
             if isinstance(df, str):
-                try:
-                    # Attempt to load serialized JSON
-                    df = pd.DataFrame(json.loads(df))
-                except Exception:
-                    # Some nodes might send it as already valid JSON text (not list)
-                    df = pd.read_json(df)
+                df = pd.DataFrame(json.loads(df))
+            elif isinstance(df, dict) or isinstance(df, list):
+                df = pd.DataFrame(df)
 
             report_text = self._generate_text(df, query, question, x, y, graph)
-            self._build_pdf(report_text, graph=graph)
+            self._build_pdf(report_text, graphPath, graph=graph)
 
             return json.dumps({
                 "message": "PDF report generated.",
-                "file_path": self.output_path
+                "file_path": self.outputPath
             }, indent=2, cls=DecimalEncoder)
         
         except Exception as e:

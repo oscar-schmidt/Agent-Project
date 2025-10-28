@@ -16,7 +16,7 @@ def cleanup_terminal():
 def print_banner():
     """welcome banner"""
     print("\n" + "=" * 70)
-    print("  REVIEW CLASSIFICATION AGENT")
+    print("  SQL 2 PDF Agent")
     print("=" * 70 + "\n")
 
 
@@ -132,7 +132,7 @@ async def run_interactive_session(thread_id, graph):
 async def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="Interactive Review Classification Agent",
+        description="Interactive SQL 2 PDF Agent",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

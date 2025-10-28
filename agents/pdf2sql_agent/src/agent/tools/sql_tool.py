@@ -120,7 +120,7 @@ class SQLQueryTool(BaseTool):
                     "error": "No results.",
                     "query": query,
                     "rows": 0,
-                    "df_json": None
+                    "df": None
                 }
 
             summary = {
@@ -132,7 +132,8 @@ class SQLQueryTool(BaseTool):
             return {
                 "query": query,
                 "summary": summary,
-                "df_json": df.to_json(orient="records")
+                "df": df.to_json(orient="records"),
+                "question": question
             }
 
         except Exception as e:
@@ -140,7 +141,7 @@ class SQLQueryTool(BaseTool):
                 "error": str(e),
                 "query": None,
                 "rows": 0,
-                "df_json": None
+                "df": None
             }
 
 

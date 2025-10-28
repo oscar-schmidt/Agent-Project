@@ -18,7 +18,7 @@ class VisualizationTool(BaseTool):
     outputPath: str = "TEMPVIS.png"
     client: Optional[OpenAI] = None # not 100% sure about this one
 
-    def __init__(self, api_key: Optional[str] = None, df: Any = None, query: str = "", question: str = "", outputPath: str = None, **kwargs):
+    def __init__(self, api_key: Optional[str] = None, df: Any = None, query: str = "", question: str = "", outputPath: str = "TEMPVIS.png", **kwargs):
         super().__init__(**kwargs)
         
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
@@ -26,12 +26,16 @@ class VisualizationTool(BaseTool):
         self.query = query
         self.question = question
         self.outputPath = outputPath or "TEMPVIS.png"
-
         self.client = OpenAI(api_key=self.api_key)
 
     def _chooseChart(self, df: pd.DataFrame, query: str, question: str):
         schema = " | ".join(f"{feature} ({df[feature].dtype})" for feature in df.columns)
         sample = df.head().to_dict()
+
+        print(f"Schema: {schema}")
+        print(f"Sample data: {sample}")
+        print(f"User query: {query}")
+        print(f"User question: {question}")
 
         # made with chatGPT
         prompt = f"""
@@ -47,16 +51,17 @@ class VisualizationTool(BaseTool):
         Your task:
         1. Choose the best chart type for the data.
         2. Suggest the most appropriate column(s) for the X and Y axes (if applicable).
+        3. Suggest a file name to save the chart image as.
 
         Respond ONLY in JSON format like this:
-        {{"type": "bar", "x": "category_name", "y": "sales"}}
+        {{"type": "bar", "x": "category_name", "y": "sales", "filename": "sales_chart.png"}}
 
         IMPORTANT - These are the only allowed chart types: ["bar", "line", "scatter", "histogram"].
         Only use column names that exist in the schema provided.
         If a chart type doesn't need both axes (like pie or histogram), omit the unused one.
         """
 
-        response = client.chat.completions.create(
+        response = self.client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "system", "content": prompt}]
         )
@@ -64,14 +69,23 @@ class VisualizationTool(BaseTool):
         info = json.loads(response.choices[0].message.content)
 
         type = info.get("type")
-        x = info.get("x")
+
+        if info.get("x") is not None:
+            x = info.get("x")
+        else:
+            x = None
 
         if info.get("y") is not None:
             y = info.get("y")
         else:
             y = None
 
-        return type, x, y
+        if info.get("filename") is not None:
+            filename = info.get("filename")
+        else:
+            filename = "TEMPVIS.png"
+
+        return type, x, y, filename
 
     def _makeChart(self, df: pd.DataFrame, type: str, x: str, y: str):
         fig = None
@@ -87,28 +101,32 @@ class VisualizationTool(BaseTool):
 
         return fig
 
-    def _run(self):
-        df = self.df
-        query = self.query
-        question = self.question
+    def _run(self, df: str, query: str, question: str, outputPath: str = "TEMPVIS.png"):
+        df = df
+        query = query
+        question = question
+        outputPath = outputPath or self.outputPath
         fig = None
 
         try:
             if isinstance(df, str):
-                try:
-                    df = pd.DataFrame(json.loads(df))
-                except Exception:
-                    df = pd.read_json(df)
+                df = pd.DataFrame(json.loads(df))
+            elif isinstance(df, dict) or isinstance(df, list):
+                df = pd.DataFrame(df)
 
-            type, x, y = self._chooseChart(df, query, question)
-            print(f"Chosen chart type: {type}, x: {x}, y: {y}")
+            type, x, y, filename = self._chooseChart(df, query, question)
+
+            if filename != None:
+                outputPath = filename
+
+            print(f"Chosen chart type: {type}, x: {x}, y: {y}, outputPath: {outputPath}")
 
             if (x not in df.columns) or (y not in df.columns) or (x == y):
                 y = None
 
             if y != None:
                 fig = self._makeChart(df, type, x, y)
-                fig.write_image(self.outputPath)
+                fig.write_image(outputPath)
 
             if fig == None:
                 return json.dumps({
@@ -124,7 +142,7 @@ class VisualizationTool(BaseTool):
 
             return json.dumps({
                 "summary": summary,
-                "image_path": self.outputPath
+                "image_path": outputPath
             }, indent=2)
         
         except Exception as e:

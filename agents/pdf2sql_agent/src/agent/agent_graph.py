@@ -26,11 +26,10 @@ from agents.pdf2sql_agent.src.memory.memory_manager import ClaudeMemoryManager
 
 
 class SQL2PDFAgent:
-    """A Review Classification Agent class for analyzing customer reviews"""
 
     def __init__(self, name: str = "SQL2PDFAgent", description: str = None, enable_critique: bool = False, enable_memory: bool = False, tools: List[Any] | None = None):
         """
-        Initialize the Review Classification Agent
+        Initialize the SQL2PDFAgent
 
         Args:
             name: Name of the agent
@@ -467,7 +466,7 @@ async def create_agent_app(enable_critique: bool = False, enable_memory: bool = 
 
     #create agent instance
     agent = SQL2PDFAgent(
-        name="ReviewClassificationAgent",
+        name="SQL2PDFAgent",
         description=get_system_prompt(),
         enable_critique=enable_critique,
         enable_memory=enable_memory

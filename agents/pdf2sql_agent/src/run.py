@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
         # NEW: Show if sentiment influenced criticality
         if hasattr(e, 'sentiment_influenced_criticality') and e.sentiment_influenced_criticality:
-            print(f" → ⚠️  Criticality adjusted by sentiment analysis")
+            print(f" → ⚠️  Criticality adjusted by SQL2PDFAgent")
 
         print(f" → Categories: {e.error.error_type}")
         print(f" → Summary: {e.error.error_summary}")
