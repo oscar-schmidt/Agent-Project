@@ -45,7 +45,7 @@ class ReviewAgent:
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
-        self.llm = init_chat_model("ollama:qwen3:8b")
+        #.llm = init_chat_model("ollama:qwen3:8b")
 
 
 

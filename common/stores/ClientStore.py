@@ -61,11 +61,11 @@ class ClientStore():
         vector = self.embedding.get_embedding(quary["description"])
         search_result = self.client.query_points(
             collection_name=self.collection_name,
-            limit=1, 
+            limit=2,
             query=vector,
             with_payload=True,
             with_vectors=False,
-            score_threshold=0.9,
+            #score_threshold=0.5
         ).model_dump()
 
         agent_info = search_result

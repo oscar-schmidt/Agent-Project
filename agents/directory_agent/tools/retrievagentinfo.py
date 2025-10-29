@@ -1,3 +1,5 @@
+import time
+
 from langchain_core.tools import BaseTool
 import logging
 from pydantic import BaseModel, create_model, Field
@@ -24,6 +26,7 @@ class ReteriveAgent(BaseTool):
     args_schema: type[BaseModel] = AgentRegistrationInput
     
     def _run(self, description: str) -> dict | str | None:
+        logging.info(f"Running {description}")
         client = ClientStore()
         logging.info("retrieve called")
         data = {

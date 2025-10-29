@@ -14,8 +14,7 @@ from common.tools.date_time import DateTime
 from common.tools.communicate import create_comm_tool
 from common.tools.csv import CSVTool
 #from common.tools.knowledgebase import retriever_tool
-from common.utils import IngestKnowledge
-import os
+#from common.utils import IngestKnowledge
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -26,7 +25,7 @@ class AgentManager():
     def __init__(self):
         self.connection_manager = ConnectionManager(
             agent_id="WebAgent",
-            description="An agent that specializes in everything web related",
+            description="A specialized agent for web-based information retrieval. It uses WebSearch to find relevant pages and Webscrape to extract specific data.",
             capabilities=["WebSearch", "Webscrape"])
         self.chat_manager = ChatManager(name="WebAgent")
         self.task_queue = asyncio.Queue()
@@ -75,28 +74,41 @@ class AgentManager():
         description = (
             f"You are the {self.chat_manager.name} agent, a web research specialist. Your primary goal is to complete the user's request by executing a plan to find, process, and synthesize information from the internet using your web tools.\n\n"
             "Your Workflow:\n"
+            "### ⚠️ CRITICAL RULE: Identify and Delegate Specialist Tasks\n\n"
+            "Your LLM has many capabilities, but you are **only** permitted to use them for *planning your web search* and *synthesizing the web results* you find.\n\n"
+            "You **must not** perform specialist tasks yourself. **Specialist Tasks** include, but are not limited to:\n"
+            "* **Sentiment Analysis** (e.g., 'is this positive?')\n"
+            "* **Classification** (e.g., 'is this text spam?')\n"
+            "* **Complex Math or Data Analysis**\n"
+            "* **Coding or File Processing**\n\n"
+            "If the user's main request is one of these tasks, you **must delegate it**."
+            "---"
             "1.  **Formulate a Plan**: Analyze the user's request and break it down into a series of steps (e.g., '1. Search for topic X', '2. Scrape relevant URLs', '3. Synthesize findings').\n"
             "2.  **Execute Web Tasks**: Use your available tools, like `search(query)` or `scrape(url)`, to execute the web-based steps of your plan.\n"
             "3.  **Analyze and Adapt**: After each tool use, you will receive the results (e.g., search results or scraped content). You must use this information to inform your next action or refine the plan.\n"
             "4.  **Handle Limitations**: If you analyze the request (or your results) and determine a step is outside your capabilities (e.g., requires file analysis, complex calculations, or non-web information), \n"
             "you **must** contact the **'DirectoryAgent'** using the 'ContactOtherAgents' tool. Instruct the DirectoryAgent to guide you to the correct specialist agent for help.\n"
-            "5.  **Provide the Final Answer**: Only provide the final, synthesized answer to the user once all steps of your plan (including waiting for replies to any delegated tasks) are complete."
+            "5. **when contacting other agents, you must provide the full context through the message as they are not aware of it, Example:"
+            "If the user asks for a sentiment analysis from a review from a website, you must get the review and pass that review to the right agent in one message."
+            "6.  **Provide the Final Answer**: Only provide the final, synthesized answer to the user once all steps of your plan (including waiting for replies to any delegated tasks) are complete."
         )
 
         tools = [communicate, websearch, webscrape, datetime, csv]
         asyncio.create_task(self.worker())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
-
-knowledge = IngestKnowledge()
-
+application = AgentManager()
+#knowledge = IngestKnowledge()
+"""
 async def main():
-    application = AgentManager()
+   
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":
     asyncio.run(main())
+
 """
+
 @ui.page("/")
 def main():
     async def handle_submit():
@@ -163,7 +175,6 @@ app.on_startup(application.startup)
 ui.run()
 
 
-"""
 
 
 

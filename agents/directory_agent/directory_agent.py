@@ -28,7 +28,7 @@ class AgentManager():
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
             if task_data["message_type"] == "message":
-                message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
+                message = f"You have a new message from: sender_id: {task_data['sender_id']}\n+ Message:{task_data['message']}"
             elif task_data["message_type"] == "registration":
                 message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
                            f"Description:{task_data["description"]}\n+"
@@ -86,7 +86,7 @@ class AgentManager():
             3.  **Formulate Reply**:
                 * **If a match is found:** Prepare a message with the specialist's ID and description (e.g., "I found a match: 'FinanceBot-v2', who is registered with the capability: 'analyze stock data and generate market reports'.").
                 * **If no match is found:** Prepare a message stating that no agent is available (e.g., "I'm sorry, no agent with that capability is currently registered.").
-            4.  **Reply to Sender**: Use the `ContactOtherAgents` tool to send your formulated reply DIRECTLY back to the agent who made the request.
+            4.  IMPORTNAT**Reply to Sender**: Use the `ContactOtherAgents` tool to send your formulated reply DIRECTLY back to the agent who made the request.
             
             ---
             ### Scenario B: Agent Registration / Capability Update
