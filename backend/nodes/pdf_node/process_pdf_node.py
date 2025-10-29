@@ -9,7 +9,7 @@ from backend.utils import get_embedding, get_chunk, clean_text, log_decorator
 
 load_dotenv()
 
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 200))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 500))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 100))
 
 

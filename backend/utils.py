@@ -15,12 +15,20 @@ from transformers import pipeline
 from backend.model.states.StateManager import StateManager
 from langchain_core.messages import HumanMessage
 from backend.model.states.graph_state.GraphState import GraphState
+from openai import OpenAI
+from constants import SYSTEM_PROMPT_LIST
 
 load_dotenv()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUMMARIZER_MODEL = os.getenv("SUMMARIZER_MODEL")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 EMBED_MODEL = os.getenv("EMBED_MODEL")
 summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
+provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+
+if provider == "openai":
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def log_decorator(function):
@@ -66,6 +74,12 @@ def get_chunk(data: str, chunk_size: int, chunk_overlap: int) -> list[str]:
 def get_embedding(chunk: str):
     if isinstance(chunk, str):
         chunk = [chunk]
+    if provider == "openai":
+        response = client.embeddings.create(
+            model=os.getenv("OPENAI_EMBED_MODEL"),
+            input=chunk
+        )
+        return [data.embedding for data in response.data]
     embed_model = load_model()
     embed_result = embed_model.encode(
         chunk, show_progress_bar=True, normalize_embeddings=True)
@@ -86,20 +100,31 @@ def load_model():
 
 
 def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_len: Optional[int] = None) -> str:
-    single_chunk_len = len(single_chunk.split())
-    max_new = max_len if max_len else max(1, single_chunk_len // 2)
-    min_new = min_len if min_len else min(50, single_chunk_len)
-    if min_new > max_new:
-        min_new = max_new // 2
-    summary = summary_pipeline(
-        single_chunk,
-        max_new_tokens=max_new,
-        min_length=min_new,
-        do_sample=False
-    )
-    if summary and "summary_text" in summary[0]:
-        return summary[0]["summary_text"].replace("\xa0", " ")
-    return ""
+    if provider == "openai":
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT_LIST.summary_prompt},
+                {"role": "user", "content": single_chunk}
+            ]
+        )
+        return resp.choices[0].message.content.strip()
+
+    elif provider == "ollama":
+        single_chunk_len = len(single_chunk.split())
+        max_new = max_len if max_len else max(1, single_chunk_len // 2)
+        min_new = min_len if min_len else min(50, single_chunk_len)
+        if min_new > max_new:
+            min_new = max_new // 2
+        summary = summary_pipeline(
+            single_chunk,
+            max_new_tokens=max_new,
+            min_length=min_new,
+            do_sample=False
+        )
+        if summary and "summary_text" in summary[0]:
+            return summary[0]["summary_text"].replace("\xa0", " ")
+        return ""
 
 
 def clean_text(text: str) -> str:
@@ -111,6 +136,25 @@ def clean_text(text: str) -> str:
     text = re.sub(r"•+", "-", text)
     text = text.strip()
     return text
+
+
+def sanitize_doc_name(doc_name: str) -> str:
+    doc_name = doc_name.strip()
+
+    base_name, ext = os.path.splitext(doc_name)
+    ext = ext.lower()
+
+    base_name = re.sub(r'[^a-zA-Z0-9._-]', '_', base_name)
+
+    base_name = re.sub(r'^[^a-zA-Z0-9]+', '', base_name)
+    base_name = re.sub(r'[^a-zA-Z0-9]+$', '', base_name)
+
+    if len(base_name + ext) < 3:
+        base_name = f"doc_{base_name}"
+    elif len(base_name + ext) > 512:
+        base_name = base_name[:512 - len(ext)]
+
+    return base_name + ext
 
 
 def get_user_input() -> str:

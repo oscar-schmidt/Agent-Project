@@ -10,7 +10,6 @@ from constants import SYSTEM_LOG_LIST
 
 load_dotenv()
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 RAG_THRESHOLD = float(os.getenv("RAG_THRESHOLD", 0.15))
 PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
