@@ -18,10 +18,10 @@ class CriticalityTool(BaseTool):
     """Tool for classifying review criticality and detecting errors"""
 
     name: str = "classify_review_criticality"
-    description: str = "Classify criticality of customer reviews and detect errors/issues using Claude LLM analysis."
+    description: str = "Classify criticality of customer reviews and detect errors/issues using LLM analysis."
 
     # Pydantic fields - must be declared as class attributes
-    claude_model: str = AGENT_MODEL  # use same claude model as agent
+    llm_model: str = AGENT_MODEL  # use same LLM model as agent
     use_database: bool = True
     batch_size: int = 50
     data_path: str = ""
@@ -29,7 +29,7 @@ class CriticalityTool(BaseTool):
 
     def __init__(
         self,
-        claude_model: str = None,
+        llm_model: str = None,
         use_database: bool = None,
         batch_size: int = 50,
         data_path: str = None,
@@ -39,14 +39,14 @@ class CriticalityTool(BaseTool):
         Initialize the CriticalityTool
 
         Args:
-            claude_model: Claude model to use for classification (defaults to config)
+            llm_model: LLM model to use for classification (defaults to config)
             use_database: Whether to use database or CSV (defaults to env var)
             batch_size: Maximum batch size for processing
             data_path: Path to CSV file if not using database
         """
         # Set defaults before calling super().__init__()
-        if claude_model is None:
-            claude_model = AGENT_MODEL
+        if llm_model is None:
+            llm_model = AGENT_MODEL
 
         if use_database is None:
             use_database = os.getenv("USE_DATABASE", "false").lower() == "true"
@@ -56,7 +56,7 @@ class CriticalityTool(BaseTool):
             data_path = DATA_PATH
 
         super().__init__(
-            claude_model=claude_model,
+            llm_model=llm_model,
             use_database=use_database,
             batch_size=batch_size,
             data_path=data_path,
@@ -144,8 +144,8 @@ class CriticalityTool(BaseTool):
         results = []
 
         for review in reviews:
-            # Detect errors and severity using Claude
-            detected_errors = detect_errors_with_ollama(review, self.claude_model)
+            # Detect errors and severity using LLM
+            detected_errors = detect_errors_with_ollama(review, self.llm_model)
 
             classified_errors = []
             for error in detected_errors:

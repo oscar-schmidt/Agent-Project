@@ -2,11 +2,8 @@ import os
 import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_anthropic import ChatAnthropic
-from agents.classification_agent.src.utils import RawReview, DetectedError
+from agents.classification_agent.src.utils import RawReview, DetectedError, get_llm_from_config
 from agents.classification_agent.src.nodes.category_normalizer import get_normalizer
-
-# using claude for better accuracy - less hallucination than ollama
 
 SYSTEM = """You are an expert at analyzing customer reviews and identifying REAL issues.
 
@@ -100,14 +97,9 @@ FEWSHOT_ASSISTANT_2 = """{
 }"""
 
 
-def make_llm(model: str = "claude-3-5-sonnet-20241022"):
-    # use claude for better accuracy
-    from agents.classification_agent.src.config import ANTHROPIC_API_KEY
-    return ChatAnthropic(
-        model=model,
-        anthropic_api_key=ANTHROPIC_API_KEY,
-        temperature=0
-    )
+def make_llm():
+    """Create LLM from config.yaml"""
+    return get_llm_from_config(temperature=0)
 
 def _json_load(s: str) -> dict:
     if not s:
@@ -200,7 +192,7 @@ def _fallback_suggestion(text: str) -> List[DetectedError]:
 
 def detect_errors_with_ollama(
     review: RawReview,
-    ollama_model: str = "claude-3-5-sonnet-20241022",  # now uses claude by default
+    ollama_model: str = None,  # deprecated parameter, uses config.yaml now
 ) -> List[DetectedError]:
     force_fallback = os.getenv("USE_FALLBACK_DETECT", "false").lower() in {"1", "true", "yes"}
 
@@ -218,11 +210,11 @@ Return ONLY the JSON object with business_type and errors array. If no issues fo
 
     if not force_fallback:
         try:
-            llm = make_llm(ollama_model)
+            llm = make_llm()
             resp = llm.invoke(full_prompt)
             raw = (getattr(resp, "content", "") or "").strip()
         except Exception as exc:
-            print(f" Claude call failed ({exc}); using heuristic detection instead.")
+            print(f" LLM call failed ({exc}); using heuristic detection instead.")
             force_fallback = True
 
     if force_fallback:

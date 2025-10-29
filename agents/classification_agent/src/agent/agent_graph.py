@@ -17,7 +17,7 @@ from langgraph.prebuilt import ToolNode
 from agents.classification_agent.src.agent.prompts import get_system_prompt
 from agents.classification_agent.src.agent.tools.memory_tool import memory_search_tool
 from agents.classification_agent.src.memory.qdrant_store import QdrantStore
-from agents.classification_agent.src.memory.memory_manager import ClaudeMemoryManager
+from agents.classification_agent.src.memory.memory_manager import MemoryManager
 from agents.classification_agent.src.agent.tools import (
     classify_review_criticality,
     analyze_review_sentiment,
@@ -58,7 +58,7 @@ class ReviewAgent:
             try:
                 self.tools.append(memory_search_tool)
                 self.memory_store = QdrantStore(collection_name="ReviewAgent")
-                self.memory_manager = ClaudeMemoryManager()
+                self.memory_manager = MemoryManager()
                 if AGENT_VERBOSE:
                     print(f"[{self.name}] Memory enabled - {self.memory_store.count()} memories stored")
             except Exception as e:

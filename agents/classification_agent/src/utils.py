@@ -45,3 +45,12 @@ class EnrichedError(BaseModel):
 def hash_error(review_id: str, summary: str) -> str:
     key = f"{review_id}|{summary}".encode("utf-8")
     return hashlib.sha256(key).hexdigest()[:16]
+
+
+def get_llm_from_config(temperature: float = 0.0):
+    """Create LLM instance from config.yaml"""
+    from config.config_helper import get_model_config
+    from langchain.chat_models import init_chat_model  # type: ignore
+
+    config = get_model_config()
+    return init_chat_model(f"{config['provider']}:{config['model']}", temperature=temperature)

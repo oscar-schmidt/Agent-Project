@@ -1,4 +1,3 @@
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import List, Union
 import json
@@ -6,20 +5,12 @@ import json
 from .schemas import Episode, Semantic
 
 
-class ClaudeMemoryManager:
-    """extracts memories from convos using claude"""
+class MemoryManager:
+    """extracts memories from conversations using configured LLM"""
 
-    def __init__(self, model: str = "claude-3-5-sonnet-20241022", api_key: str = None):
-        # load api key from config if not provided
-        if api_key is None:
-            from src.config import ANTHROPIC_API_KEY
-            api_key = ANTHROPIC_API_KEY
-
-        self.llm = ChatAnthropic(
-            model=model,
-            anthropic_api_key=api_key,
-            temperature=0.0
-        )
+    def __init__(self):
+        from agents.classification_agent.src.utils import get_llm_from_config
+        self.llm = get_llm_from_config(temperature=0.0)
 
     def extract(self, messages: List) -> List[Union[Episode, Semantic]]:
         """extract episodes and semantics from conversation"""
