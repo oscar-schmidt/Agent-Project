@@ -52,7 +52,12 @@ class ReviewAgent:
 
 
         # Define available tools
-        self.tools = tools
+        self.tools = tools if tools is not None else [
+            classify_review_criticality,
+            analyze_review_sentiment,
+            log_reviews_to_notion,
+            get_current_datetime
+        ]
         # add memory components if enabled
         if self.enable_memory:
             try:
