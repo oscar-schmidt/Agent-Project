@@ -4,11 +4,12 @@ import hashlib
 from dotenv import load_dotenv
 from chromadb import Client, PersistentClient
 from sentence_transformers import SentenceTransformer
-from agents.main_agent.backend.model.states.StateManager import StateManager
-from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
-from agents.main_agent.backend.model.states.qa_state.DocTextClass import Meta
-from agents.main_agent.backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
-from agents.main_agent.backend.utils import get_embedding, get_user_input, log_decorator
+import streamlit
+from backend.model.states.StateManager import StateManager
+from backend.model.states.graph_state.GraphState import GraphState
+from backend.model.states.qa_state.DocTextClass import Meta
+from backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
+from backend.utils import get_embedding, sanitize_doc_name
 
 load_dotenv()
 
@@ -19,17 +20,22 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 def get_or_create_doc_collection():
     state = StateManager.get_state()
 
-    doc_name = state.qa_state.doc_name
+    doc_name = sanitize_doc_name(state.qa_state.doc_name)
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
-    collection = chroma_client.get_or_create_collection(
-        name=doc_name,
-        metadata={
-            "description": f"pdf {doc_name} chunks and chunk summary",
-            "created": str(datetime.now()),
-            "distance_metric": "cosine"
-        })
+    try:
+
+        collection = chroma_client.get_or_create_collection(
+            name=doc_name,
+            metadata={
+                "description": f"pdf {doc_name} chunks and chunk summary",
+                "created": str(datetime.now()),
+                "distance_metric": "cosine"
+            })
+    except Exception as e:
+        print(f"{e}")
+
     state.logs.append(
         f"[collection] {doc_name} created or found")
     return collection

@@ -7,7 +7,16 @@ from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_MESSAGE_LIST
 load_dotenv()
 
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if LLM_PROVIDER == "openai":
+    import openai
+    openai.api_key = OPENAI_API_KEY
+else:
+    from ollama import chat
 
 
 def rag_agent(state: GraphState) -> GraphState:
@@ -18,11 +27,26 @@ def rag_agent(state: GraphState) -> GraphState:
         top_k_kb=state.qa_state.top_k_kb)
 
     if user_input:
+        if LLM_PROVIDER == "openai":
+            response = openai.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            content = response.choices[0].message.content
+    else:
         response = chat(
-            OLLAMA_MODEL, [{"role": "system", "content":
-                            prompt}, {"role": "user", "content": user_input}])
+            OLLAMA_MODEL,
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        content = response.message.content
 
     state.messages.append(
-        AIMessage(content=response.message.content))
+        AIMessage(content=content))
     state.logs.append(f"[rag_agent] prompt: {prompt}")
     return state

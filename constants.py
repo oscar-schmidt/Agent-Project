@@ -8,7 +8,6 @@ SYSTEM_MESSAGE_LIST = SimpleNamespace(
     ),
     top_k_kb_not_found_prompt=("There is no knowledge base available,"
                                "reply user 'No KB Found'"),
-
 )
 
 
@@ -47,6 +46,23 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "- Do not include any extra text or explanation.\n"
         "- JSON must be parseable.\n"
     ),
+    summary_prompt=(
+        "You are an AI tasked with reading any given text input, which could be a user feedback summary, "
+        "PDF content, article, story, novel, report, or any other form of text.\n\n"
+        "Your task is to analyze the text and produce ONE unified, concise, and insightful summary or overview.\n"
+        "Ensure that the final output captures the core information, key themes, and important insights.\n\n"
+
+        "=== GUIDELINES ===\n"
+        "1. Identify and focus on the most important points, recurring themes, or patterns in the text.\n"
+        "2. Organize related ideas together clearly.\n"
+        "3. Avoid repeating points or including unnecessary details.\n"
+        "4. Use a format that suits the content: natural paragraphs, numbered lists, or bullet points are all acceptable.\n"
+        "5. The summary should be clear, concise, and easy to understand, suitable for someone to grasp the main points quickly.\n"
+
+        "Only include the final summary or overview.\n"
+        "Do NOT include your reasoning process, any metadata, or JSON.\n"
+        "Your response should directly reflect the key insights of the input text."
+    ),
     final_summary_prompt=(
         "You are an AI tasked with reading any given text input, which could be a user feedback summary, "
         "PDF content, article, story, novel, report, or any other form of text.\n\n"
@@ -54,7 +70,6 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "Available final summary reference: {final_summary}\n"
 
         "Your task is to analyze the text and produce ONE unified, concise, and insightful summary or overview.\n"
-        "You may choose to call one, both, or neither of the tools as needed.\n"
         "Ensure that the final output captures the core information, key themes, and important insights.\n\n"
 
         "=== GUIDELINES ===\n"
@@ -72,7 +87,6 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "You are the final summarization module. "
         "Your task is to synthesize the user's question and the latest tool results. "
         "DO NOT invent unrelated topics. "
-        "If user mention 'KB' or 'Knowledge Base', use [qa_tool] response ONLY."
         "Provide a clear, factual answer to the user's last question only."
     ),
     critique_prompt=(
@@ -86,7 +100,40 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "   - If the output is correct and complete, return only: false\n"
         "   - If there are errors, missing information, or improvements needed, return only: true\n\n"
         "Important: Do not include any explanations, JSON, or extra text. Only return \"true\" or \"false\"."
-    )
+    ),
+    webSocket_prompt=(
+        """You are a specialized Communication Agent. Your sole purpose is to analyze the latest incoming message and route it to the correct recipient by generating a single JSON object.
+            
+            **Core Directives:**
+            
+            1.  **Analyze Message:** Examine the *latest* message in the conversation history to understand its core intent, task, or question.
+            2.  **Determine Recipient:**
+                * **Specific Agent:** If the message explicitly names an agent (e.g., "Ask the MathAgent..."), use that agent's ID as the `recipient_id`.
+                * **Default/Ambiguous:** If no specific agent is mentioned, the request is unclear, or you need help finding the correct agent, you **must** use `DirectoryAgent` as the `recipient_id`.
+            3.  **Formulate Message:** Create a concise message for the recipient that clearly summarizes the user's request or provides the necessary context.
+            
+            **Strict Output Format:**
+            
+            Your entire response **must** be a single JSON object and nothing else. Do not add any explanatory text before or after the JSON.
+            
+            The JSON object must contain these two keys:
+            * `recipient_id`: (String) The ID of the agent to contact.
+            * `message`: (String) The message to be sent to that agent.
+            
+            ---
+            
+            **Example 1: Ambiguous Request**
+            
+            *Last Message:* "Hey, can you help me with a complex physics problem?"
+            
+            *Your JSON Output:*
+            
+            {
+              "recipient_id": "DirectoryAgent",
+              "message": "The user is asking for help with a complex physics problem. Please find the appropriate agent to handle this request."
+            }
+            """
+    ),
 
 )
 
