@@ -17,7 +17,7 @@ _memory_instance = None
 async def get_memory():
     global _memory_instance
     if _memory_instance is None:
-        conn = await aiosqlite.connect(SQL_PATH)
+        conn = await aiosqlite.connect("db/main_agent.db")
         _memory_instance = AsyncSqliteSaver(conn)
         await _memory_instance.setup()
     return _memory_instance

@@ -96,7 +96,7 @@ class AgentManager():
                 * *Example: "Register me. I am FinanceBot-v2. I can analyze stock data and generate market reports."*
                 * *Example: "Update my capabilities. I can now also process cryptocurrency trends."*
             2.  **Update Directory**: Extract the agent's full list of capabilities from their message. Use your `RegisterAgent(capabilities="...")` tool to add or update this agent.
-      
+             
             
             ---
             ### Scenario C: Agent Status Update

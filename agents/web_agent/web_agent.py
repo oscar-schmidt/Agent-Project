@@ -4,6 +4,7 @@ import websockets
 from nicegui import app, ui
 import asyncio
 import json
+import os
 import logging
 from common.ConnectionManager import ConnectionManager
 from agents.web_agent.tools.webscrape import WebScrape
@@ -21,7 +22,7 @@ logging.basicConfig(level=logging.INFO,
 
 class AgentManager():
     """Manages the agent, however needs to be replaced by the AgentManager
-        class from the common directory to reduce duplicate code"""
+    class from the common directory to reduce duplicate code"""
     def __init__(self):
         self.connection_manager = ConnectionManager(
             agent_id="WebAgent",
@@ -97,18 +98,17 @@ class AgentManager():
         asyncio.create_task(self.worker())
         await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
-application = AgentManager()
+
 #knowledge = IngestKnowledge()
 """
 async def main():
-   
+    
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":
     asyncio.run(main())
-
 """
-
+application = AgentManager()
 @ui.page("/")
 def main():
     async def handle_submit():

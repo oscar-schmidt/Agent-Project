@@ -64,7 +64,7 @@ def init_database():
 #ONLY AT INIT
 def migrate_csv_to_db(csv_path: str):
     """Migrate CSV data to PostgreSQL"""
-    from src.nodes.load_reviews import load_reviews
+    from agents.classification_agent.src.nodes.load_reviews import load_reviews
 
    
     reviews = load_reviews(csv_path)
