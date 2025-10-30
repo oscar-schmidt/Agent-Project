@@ -28,6 +28,7 @@ class finalized_tool(BaseTool):
 
     def invoke(self, args: dict) -> ToolReturnClass:
         state: GraphState = args["state"]
+        should_recall: bool = args.get("should_recall", False)
         user_input = get_user_input()
 
         recent_msgs = state.messages[-6:] if len(
@@ -72,7 +73,13 @@ class finalized_tool(BaseTool):
             content = getattr(response.message, "content",
                               None) or "No response."
 
-        state.messages.append(AIMessage(content=content))
+        if should_recall:
+            state.tool_outputs.append({
+                "tool": "finalized_tool",
+                "agent_response": content}
+            )
+        else:
+            state.messages.append(AIMessage(content=content))
 
         return ToolReturnClass(
             state=state,

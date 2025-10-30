@@ -12,6 +12,7 @@ from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import To
 from agents.main_agent.backend.tools.bind_tool.finalized_tool import finalized_tool
 from agents.main_agent.backend.tools.command import command
 from agents.main_agent.backend.tools.critique import critique
+from agents.main_agent.backend.tools.prompt_generator import prompt_generator
 from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_PROMPT_LIST
 from agents.main_agent.backend.tools.get_tool_registry import get_tool_registry
@@ -135,7 +136,7 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
         for tool_name, args in tool_name_args:
             new_state = await execute_tool(tool_name, args, bind_tools, new_state)
 
-        finalized_result = await finalized_tool().ainvoke({"state": new_state})
+        finalized_result = await finalized_tool().ainvoke({"state": new_state, "should_recall": should_recall})
         new_state = command("chat_tool", finalized_result)
 
         should_recall = critique(
@@ -148,7 +149,7 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
 
         attempt += 1
 
-    finalized_result = await finalized_tool().ainvoke({"state": new_state})
+    finalized_result = await finalized_tool().ainvoke({"state": new_state, "should_recall": False})
     final_state = command("chat_tool", finalized_result)
     return final_state
 
@@ -230,37 +231,43 @@ async def send_request_to_others(message, arg_list, state: GraphState) -> GraphS
         )
     except Exception as e:
         logging.error(f"Adaptor init failed: {e}")
+        return state
 
-        if not getattr(adaptor, "_started", False):
-            await adaptor.start()
-            await asyncio.sleep(0.5)
+    if not getattr(adaptor, "_started", False):
+        await adaptor.start()
+        await asyncio.sleep(0.5)
 
-        state.logs.append("[invoke_tool] Sending request to DirectoryAgent")
+    state.logs.append("[invoke_tool] Sending request to DirectoryAgent")
+    try:
+        await adaptor.send_message({
+            "message_type": "message",
+            "recipient_id": prompt.get("recipient_id", "DirectoryAgent"),
+            "sender_id": "main_agent",
+            "message": prompt.get("message", "Empty message"),
+        })
+    except Exception as e:
+        logging.error(f"Error sending message: {e}")
+        return state
 
-        if prompt["recipient_id"] and prompt["message"]:
-            try:
-                await adaptor.send_message({
-                    "message_type": "message",
-                    "recipient_id": prompt["recipient_id"],
-                    "sender_id": "main_agent",
-                    "message": prompt["message"],
-                })
-            except Exception as e:
-                logging.error(f"Error sending message: {e}")
+    agent_response = None
+    try:
+        agent_response: ToolReturnClass = await asyncio.wait_for(
+            adaptor.receive_message(),
+            timeout=30.0
+        )
+    except asyncio.TimeoutError:
+        logging.error("Timeout waiting for response from DirectoryAgent")
+    except Exception as e:
+        logging.error(f"Receive failed: {e}")
 
-        try:
-            agent_response: ToolReturnClass = await asyncio.wait_for(
-                adaptor.receive_message(),
-                timeout=30.0
-            )
-        except asyncio.TimeoutError:
-            logging.error("Timeout waiting for response from DirectoryAgent")
-        except Exception as e:
-            logging.error(f"Receive failed: {e}")
-
-            if agent_response and agent_response.meta.get("tool_name") in tool_names:
-                response_content = agent_response.agent_response
-            else:
-                logging.error(f"{agent_response.agent_response}")
+    if agent_response:
+        if agent_response.meta.get("tool_name") in tool_names:
+            state.messages.append(
+                AIMessage(content=agent_response.agent_response))
+        else:
+            logging.error(
+                f"Unrecognized response: {agent_response.agent_response}")
+    else:
+        logging.warning("No response received from agent.")
 
     return state

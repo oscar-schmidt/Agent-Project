@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
-from backend.model.states.graph_state.GraphState import GraphState
 from constants import SYSTEM_PROMPT_LIST
 from langchain_core.messages import HumanMessage, AIMessage
+from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 import json
 
 load_dotenv()

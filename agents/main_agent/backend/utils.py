@@ -10,6 +10,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import numpy as np
+from openai import OpenAI
 from functools import wraps
 from transformers import pipeline
 from agents.main_agent.backend.model.states.StateManager import StateManager
