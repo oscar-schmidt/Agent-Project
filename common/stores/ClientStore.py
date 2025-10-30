@@ -55,7 +55,8 @@ class ClientStore():
                 )
                 return "Agent registration saved"
             else:
-                return "Agent Registration already exists"
+                self.update(data.get("agent_id"),data.get("status"))
+                return "Agent Registration already exists, and agent status changed to online"
             
     def get(self, quary: dict) -> dict | None:
         vector = self.embedding.get_embedding(quary["description"])

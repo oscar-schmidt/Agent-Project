@@ -37,3 +37,5 @@ class UpdateAgentStatus(BaseTool):
         result = client.update(agent_id=agent_id,status=status.value)
         logging.info(f"{result}")
         return "Update successful"
+
+

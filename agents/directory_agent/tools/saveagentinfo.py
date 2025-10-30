@@ -39,7 +39,7 @@ class RegisterAgent(BaseTool):
             "agent_id": agent_id,
             "description": description,
             "capabilities": capabilities,
-            "status": "AVAILABLE"
+            "status": "online"
         }
         result = client.store(data=data)
         logging.info("register tool called")
