@@ -100,15 +100,15 @@ class AgentManager():
 
 
 #knowledge = IngestKnowledge()
-"""
+
 async def main():
-    
+    application = AgentManager()
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":
     asyncio.run(main())
 """
-application = AgentManager()
+
 @ui.page("/")
 def main():
     async def handle_submit():
@@ -173,7 +173,7 @@ def main():
     application.update_ui_callback = update_chat_display
 app.on_startup(application.startup)
 ui.run()
-
+"""
 
 
 
