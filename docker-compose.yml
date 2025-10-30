@@ -1,5 +1,9 @@
 version: '3.8'
 
+# LOCAL DEVELOPMENT ONLY
+# For team collaboration, use cloud database (Supabase) with DATABASE_URL in .env
+# This PostgreSQL is for local testing without internet dependency
+
 services:
   postgres:
     image: postgres:15-alpine

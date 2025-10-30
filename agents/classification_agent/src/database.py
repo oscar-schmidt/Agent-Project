@@ -8,7 +8,7 @@ import getpass
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'dbname': os.getenv('DB_NAME', 'reviews'),
-    'user': os.getenv('DB_USER', getpass.getuser()), 
+    'user': os.getenv('DB_USER', getpass.getuser()),
     'port': os.getenv('DB_PORT', '5432')
 }
 
@@ -17,7 +17,12 @@ if os.getenv('DB_PASSWORD'):
     DB_CONFIG['password'] = os.getenv('DB_PASSWORD')
 
 def get_connection():
-    """Get database connection"""
+    """Get database connection (DATABASE_URL or DB_* variables)"""
+    from agents.classification_agent.src.config import DATABASE_URL
+
+    if DATABASE_URL:
+        return psycopg.connect(DATABASE_URL)
+
     return psycopg.connect(**DB_CONFIG)
 
 def init_database():

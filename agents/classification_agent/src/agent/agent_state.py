@@ -8,14 +8,14 @@ from langgraph.graph.message import add_messages
 
 
 class ReviewAgentState(TypedDict):
-    
+
     #convo history
     messages: Annotated[list, add_messages]
 
     # tool call cache
-    last_classified_reviews: Optional[str]   
-    last_sentiment_analysis: Optional[str]  
-    last_review_ids: Optional[List[str]]     
+    last_classified_reviews: Optional[str]
+    last_sentiment_analysis: Optional[str]
+    last_review_ids: Optional[List[str]]
 
     # plan and reason
     plan: Optional[str]
@@ -27,6 +27,10 @@ class ReviewAgentState(TypedDict):
     # long term memory
     retrieved_memories: Optional[List[dict]]
     memory_context: Optional[str]
+
+    # workflow tracking
+    workflow_steps_completed: Optional[List[str]]
+    requires_agent_reply: Optional[bool]
 
 #empty  init state for new chat
 def create_initial_state() -> ReviewAgentState:

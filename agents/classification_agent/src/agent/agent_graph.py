@@ -135,11 +135,16 @@ class ReviewAgent:
         user_message = state["messages"][-1].content if state["messages"] else ""
 
         system_msg = (
-            "You are an expert planner for a review classification system. "
-            "Create a concise, step-by-step plan to answer the user's request. "
-            "Consider which tools to use and in what order. "
-            "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
-            f"Available tools: {[tool.name for tool in self.tools]}\n"
+            "Create a numbered step-by-step plan. Each step = ONE tool call.\n"
+            f"Available tools: {[tool.name for tool in self.tools]}\n\n"
+            "For messages from agents (WebAgent, etc.) requesting classification + Notion logging:\n"
+            "Step 1: ingest_review (if raw review text provided)\n"
+            "Step 2: classify_review_criticality\n"
+            "Step 3: analyze_review_sentiment\n"
+            "Step 4: log_reviews_to_notion\n"
+            "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<summary>)\n\n"
+            "CRITICAL: Step 5 is MANDATORY for agent messages. It's a separate tool call, not commentary.\n"
+            "For courtesy messages ('Thank you'), create plan: '1. No action needed (courtesy message)'\n"
         )
 
         # add memory context if available
@@ -178,6 +183,19 @@ class ReviewAgent:
         if state.get("plan"):
             system_prompt += f"\n\nYour plan:\n{state['plan']}"
 
+            # Check if ContactOtherAgents is in plan but hasn't been called yet
+            if "ContactOtherAgents" in state["plan"]:
+                # Check message history to see if ContactOtherAgents has been called
+                contact_called = any(
+                    hasattr(msg, "tool_calls") and
+                    any(tc.get("name") == "ContactOtherAgents" for tc in msg.tool_calls)
+                    for msg in state["messages"]
+                    if hasattr(msg, "tool_calls")
+                )
+
+                if not contact_called:
+                    system_prompt += "\n\n⚠️ CRITICAL: Your plan includes ContactOtherAgents but you have NOT called it yet. You MUST call ContactOtherAgents as a tool - do NOT output text instead."
+
         # Add critique feedback if available (for revision)
         if state.get("critique") and state["critique"] != "None":
             system_prompt += f"\n\nYou must revise your previous answer based on this critique:\n{state['critique']}"
@@ -186,6 +204,66 @@ class ReviewAgent:
 
         # Prepare messages with system prompt
         messages_with_prompt = [("system", system_prompt)] + state["messages"]
+
+        # Check what tools have been called in THIS turn (since the last user message)
+        tools_called = []
+        # Find the last user/human message index
+        last_user_msg_idx = -1
+        for i in range(len(state["messages"]) - 1, -1, -1):
+            msg = state["messages"][i]
+            if hasattr(msg, "type") and msg.type in ("human", "user"):
+                last_user_msg_idx = i
+                break
+            # Check for HumanMessage class
+            if msg.__class__.__name__ in ("HumanMessage", "UserMessage"):
+                last_user_msg_idx = i
+                break
+
+        # Only count tool calls AFTER the last user message
+        if last_user_msg_idx >= 0:
+            for msg in state["messages"][last_user_msg_idx:]:
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    tools_called.extend([tc.get("name") for tc in msg.tool_calls])
+
+        # Enforce ContactOtherAgents if it's in the plan but hasn't been called
+        if state.get("plan") and "ContactOtherAgents" in state["plan"]:
+            # Check which required tools are missing
+            has_classify = "classify_review_criticality" in tools_called
+            has_sentiment = "analyze_review_sentiment" in tools_called
+            has_logged = "log_reviews_to_notion" in tools_called
+            has_replied = "ContactOtherAgents" in tools_called
+
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] Enforcement check - classify:{has_classify}, sentiment:{has_sentiment}, logged:{has_logged}, replied:{has_replied}")
+
+            # Step 2: Enforce classify_review_criticality if it's in plan but not called
+            if "classify_review_criticality" in state["plan"] and not has_classify:
+                # Put enforcement at the TOP to override everything
+                enforcement_msg = "IMMEDIATE INSTRUCTION: Call classify_review_criticality tool NOW. Do not call any other tool.\n\n" + system_prompt
+                system_prompt = enforcement_msg
+                if AGENT_VERBOSE:
+                    print(f"[{self.name}] >> ENFORCING step 2: classify_review_criticality")
+            # Step 3: Enforce sentiment if classify done but sentiment not done
+            elif "analyze_review_sentiment" in state["plan"] and has_classify and not has_sentiment:
+                system_prompt = "IMMEDIATE INSTRUCTION: Call analyze_review_sentiment tool NOW. Do not call any other tool.\n\n" + system_prompt
+                if AGENT_VERBOSE:
+                    print(f"[{self.name}] >> ENFORCING step 3: analyze_review_sentiment")
+            # Step 4: Enforce logging if both classify and sentiment done but logging not done
+            elif "log_reviews_to_notion" in state["plan"] and has_classify and has_sentiment and not has_logged:
+                system_prompt = "IMMEDIATE INSTRUCTION: Call log_reviews_to_notion tool NOW with merged JSON from classify and sentiment. Do not call any other tool.\n\n" + system_prompt
+                if AGENT_VERBOSE:
+                    print(f"[{self.name}] >> ENFORCING step 4: log_reviews_to_notion")
+            # Step 5: Enforce ContactOtherAgents if all other steps done
+            elif not has_replied:
+                # Check if all other planned steps are complete
+                classify_done = "classify_review_criticality" not in state["plan"] or has_classify
+                sentiment_done = "analyze_review_sentiment" not in state["plan"] or has_sentiment
+                logging_done = "log_reviews_to_notion" not in state["plan"] or has_logged
+
+                if classify_done and sentiment_done and logging_done:
+                    system_prompt = "STOP. You have completed all data processing. You MUST now call the ContactOtherAgents TOOL to reply to the sender. DO NOT write a summary. DO NOT output text. ONLY call the ContactOtherAgents tool with recipient_id and message parameters. This is MANDATORY.\n\n" + system_prompt
+                    if AGENT_VERBOSE:
+                        print(f"[{self.name}] >> ENFORCING step 5: ContactOtherAgents")
 
         # Invoke LLM with tools
         ai_response = self.llm_with_tools.invoke(messages_with_prompt)

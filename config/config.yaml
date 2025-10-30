@@ -1,7 +1,7 @@
 model_choice: gpt
 models:
   gpt:
-    model: gpt-4o-mini
+    model: gpt-5
     provider: openai
   sonnet:
     model: claude-3-5-sonnet-latest
