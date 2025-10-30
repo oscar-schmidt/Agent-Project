@@ -19,17 +19,22 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 def get_or_create_doc_collection():
     state = StateManager.get_state()
 
-    doc_name = state.qa_state.doc_name
+    doc_name = sanitize_doc_name(state.qa_state.doc_name)
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
-    collection = chroma_client.get_or_create_collection(
-        name=doc_name,
-        metadata={
-            "description": f"pdf {doc_name} chunks and chunk summary",
-            "created": str(datetime.now()),
-            "distance_metric": "cosine"
-        })
+    try:
+
+        collection = chroma_client.get_or_create_collection(
+            name=doc_name,
+            metadata={
+                "description": f"pdf {doc_name} chunks and chunk summary",
+                "created": str(datetime.now()),
+                "distance_metric": "cosine"
+            })
+    except Exception as e:
+        print(f"{e}")
+
     state.logs.append(
         f"[collection] {doc_name} created or found")
     return collection

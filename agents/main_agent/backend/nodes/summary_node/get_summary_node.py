@@ -8,7 +8,6 @@ from agents.main_agent.backend.utils import get_embedding, get_user_input, singl
 
 load_dotenv()
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 SUMMARY_MIN_LENGTH = int(os.getenv("SUMMARY_MIN_LENGTH", 1000))
 SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH", 2000))
 

@@ -106,3 +106,14 @@ class ConnectionManager:
         await asyncio.sleep(self.reconnect_delay)
         self.reconnect_delay = min(self.reconnect_delay * 2, 30)
         await self.connect()
+
+    async def disconnect(self):
+        self.is_connected = False
+        if self.websocket:
+            try:
+                await self.websocket.close()
+                logging.info("Disconnected from server")
+            except Exception as e:
+                logging.error(f"Error during disconnect: {e}")
+            finally:
+                self.websocket = None
