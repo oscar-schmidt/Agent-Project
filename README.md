@@ -1,8 +1,4 @@
 # Project D
-## Project Description
-This multi-agent system is designed to empower businesses with actionable insights derived from customer feedback. In today's competitive landscape, understanding and responding to customer sentiment is paramount to sustained growth and improved operational performance.
-The system automates the entire process of customer review analysis, transforming raw, unstructured feedback into clear, digestible, and visually rich information that businesses can use.
-
 ## 🏁 Getting Started
 ### Prerequisites
 Before you begin, please install the following software:
