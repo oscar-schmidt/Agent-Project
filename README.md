@@ -37,22 +37,15 @@ Start the installation process by obtaining the code, which can be cloned from t
 After, follow the following steps for **`pip`**:
 
 1.  Start by creating the virtual environment:
-    ```bash
-    python -m venv .venv
-    ```
+    ```python -m venv .venv```
 2.  Then, on Linux or macOS, run the following to enter the virtual environment:
-    ```bash
-    source .venv/bin/activate
-    ```
+    ```source .venv/bin/activate```
     Or on Windows, run:
-    ```powershell
-    .venv\Scripts\activate
-    ```
+    ```.venv\Scripts\activate```
     (On Windows, if you get an ExecutionPolicy error, run this command first: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`)
 3.  Then run the following to install all the necessary packages:
-    ```bash
-    pip install -r requirements.txt
-    ```
+    ```pip install -r requirements.txt```
+    
 Or for **`uv`**:
 1.  Run `uv sync`. It should automatically create the virtual environment and install all the necessary packages.
 
