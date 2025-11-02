@@ -2,7 +2,8 @@ import asyncio
 import json
 import logging
 from functools import partial
-from ConnectionManager import ConnectionManager
+
+from agents.main_agent.Server.ConnectionManager import ConnectionManager
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,24 +17,25 @@ async def handle_message(message_data: dict, connection: ConnectionManager):
     logging.info(
         f"DirectoryAgent received from {sender_id} / {agent_id} message_type: {msg_type}: {msg}")
 
-    await connection.send({
+    await connection.send_message({
         "message_type": "message",
         "recipient_id": "main_agent",
-        "sender_id": "DirectoryAgent",
-        "message": f"DirectoryAgent received your message from  {sender_id} / {agent_id} message_type: {msg_type}: {msg}"
+        "sender_id": "WebAgent",
+        "message": f"weather for tommorrow is 18 degree."
+        # "message": f"WebAgent received your message from  {sender_id} / {agent_id} message_type: {msg_type}: {msg}"
     })
 
 
 async def main():
     connection = ConnectionManager(
-        agent_id="DirectoryAgent",
-        description="Directory and routing agent",
-        capabilities=["routing", "directory"]
+        agent_id="WebAgent",
+        description="WebAgent",
+        capabilities=["online search"]
     )
 
     try:
         await connection.connect()
-        logging.info("DirectoryAgent connected and registered")
+        logging.info("WebAgent connected and registered")
 
         await connection.start_listening(
             partial(handle_message, connection=connection)
@@ -43,11 +45,11 @@ async def main():
             await asyncio.sleep(1)
 
     except Exception as e:
-        logging.error(f"DirectoryAgent encountered an error: {e}")
+        logging.error(f"WebAgent encountered an error: {e}")
 
     finally:
         await connection.disconnect()
-        logging.info("DirectoryAgent disconnected")
+        logging.info("WebAgent disconnected")
 
 
 asyncio.run(main())

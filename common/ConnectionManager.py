@@ -7,9 +7,11 @@ from websockets import ConnectionClosedError
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
+
+
 class ConnectionManager:
     def __init__(self, agent_id: str, description: str, capabilities: List[str],):
-        self.connection = None,
+        self.connection = None
         self.uri = "ws://localhost:8765"
         self._websocket: websockets.ClientProtocol | None = None
         self.agent_id = agent_id
@@ -49,7 +51,6 @@ class ConnectionManager:
             logging.error("Websocket not connected")
             return "Websocket not connected"
 
-
         await self._websocket.send(json.dumps(payload))
 
     async def start_listening(self, message_handler):
@@ -82,5 +83,3 @@ class ConnectionManager:
     async def close(self):
         self._websocket.close()
         self._websocket = None
-
-

@@ -142,3 +142,5 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
 # tell me each error type in the document
 # does file mention billing error
 # PYTHONASYNCIODEBUG=1 python main.py
+# python -m agents.main_agent.Server.server
+# python -m agents.main_agent.Server.WebAgent

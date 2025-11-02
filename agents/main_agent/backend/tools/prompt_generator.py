@@ -1,9 +1,11 @@
 import os
 from dotenv import load_dotenv
+from agents.main_agent.backend.model.states.StateManager import StateManager
 from constants import SYSTEM_PROMPT_LIST
 from langchain_core.messages import HumanMessage, AIMessage
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 import json
+from langchain.chat_models import init_chat_model
 
 load_dotenv()
 
@@ -20,7 +22,9 @@ else:
     from ollama import chat
 
 
-def prompt_generator(state: GraphState):
+def prompt_generator(agent_response: str = None):
+    state = StateManager.get_state()
+
     system_prompt = SYSTEM_PROMPT_LIST.webSocket_prompt
 
     recent_msgs = state.messages[-6:] if len(
@@ -34,6 +38,9 @@ def prompt_generator(state: GraphState):
             messages.append({"role": "user", "content": msg.content})
         elif isinstance(msg, AIMessage):
             messages.append({"role": "assistant", "content": msg.content})
+
+    if agent_response:
+        messages.append({"role": "assistant", "content": agent_response})
 
     if LLM_PROVIDER == "openai":
         response = openai.chat.completions.create(

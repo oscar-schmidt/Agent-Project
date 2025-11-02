@@ -3,7 +3,6 @@ import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from agents.main_agent.Server.adaptor import Adaptor
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.tools.tool_invoke_agent import tool_agent
 

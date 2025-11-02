@@ -6,14 +6,14 @@ from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage
 import os
 import ollama
-from agents.main_agent.Server.adaptor import Adaptor
+from agents.main_agent.Server.MainAgentAdaptor import MainAgentAdaptor
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
 from agents.main_agent.backend.tools.bind_tool.finalized_tool import finalized_tool
 from agents.main_agent.backend.tools.command import command
 from agents.main_agent.backend.tools.critique import critique
 from agents.main_agent.backend.tools.prompt_generator import prompt_generator
-from agents.main_agent.backend.utils import get_user_input, log_decorator
+from agents.main_agent.backend.utils import get_user_input
 from constants import SYSTEM_PROMPT_LIST
 from agents.main_agent.backend.tools.get_tool_registry import get_tool_registry
 
@@ -114,38 +114,54 @@ def get_bind_tools(state: GraphState) -> list:
 
 
 async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
-    adaptor = None
     tool_name_args = get_tool_name_list(message, state)
     user_input = get_user_input()
     new_state = state
-    arg_list = []
-
-    # if not bind_tools or len(bind_tools) == 0 or not tool_name_args:
-    #     if adaptor:
-    #         new_state = await send_request_to_others(message, new_state)
-    #     else:
-    #         new_state.messages.append(
-    #             AIMessage(content="No tools available. Responding directly."))
-    #     return new_state
-
-    max_attempts = 2
+    max_attempts = 3
     attempt = 0
     should_recall = True
 
+    main_agent = await MainAgentAdaptor.create()
+
     while attempt < max_attempts and should_recall:
+
         for tool_name, args in tool_name_args:
             new_state = await execute_tool(tool_name, args, bind_tools, new_state)
 
-        finalized_result = await finalized_tool().ainvoke({"state": new_state, "should_recall": should_recall})
+        finalized_result = await finalized_tool().ainvoke({
+            "state": new_state,
+            "should_recall": should_recall
+        })
         new_state = command("chat_tool", finalized_result)
 
-        should_recall = critique(
-            user_input, finalized_result.agent_response)
+        should_recall = critique(user_input, finalized_result.agent_response)
 
         if should_recall:
-            maybe_new_state = await send_request_to_others(message, arg_list, new_state)
-            if isinstance(maybe_new_state, GraphState):
-                new_state = maybe_new_state
+            format_data = prompt_generator(finalized_result.agent_response)
+            directory_message = format_data.get("message")
+            # await main_agent.send_message(recipient_id="DirectoryAgent", message=directory_message)
+            await main_agent.send_message(recipient_id="WebAgent", message=directory_message)
+            directory_response = await main_agent.receive_message()
+            if not directory_response:
+                logging.info("No response from DirectoryAgent.")
+                break
+
+            logging.info("Response from DirectoryAgent: {directory_response}")
+
+            try:
+                dir_data = json.loads(directory_response)
+                format_data = prompt_generator(dir_data)
+                recipient_id = format_data.get("recipient_id")
+                next_message = format_data.get("message")
+            except json.JSONDecodeError:
+                logging.info("DirectoryAgent returned invalid JSON.")
+                break
+
+            await main_agent.send_message(recipient_id=recipient_id, message=next_message)
+            agent_response = await main_agent.receive_message()
+            logging.info(f"Response from {recipient_id}: {agent_response}")
+
+            finalized_result.agent_response = agent_response
 
         attempt += 1
 
@@ -216,58 +232,3 @@ def get_tool_name_list(message, state: GraphState) -> list[tuple[str, dict]]:
                 AIMessage(content="Can I Beg Your Pardon?"))
 
     return tool_name_args
-
-
-async def send_request_to_others(message, arg_list, state: GraphState) -> GraphState:
-    tool_registry = get_tool_registry()
-    tool_names = list(tool_registry.keys())
-    prompt = prompt_generator(state)
-
-    try:
-        adaptor = await Adaptor.get_adaptor(
-            agent_id="main_agent",
-            description="Interactive client",
-            capabilities=["qa", "summary"]
-        )
-    except Exception as e:
-        logging.error(f"Adaptor init failed: {e}")
-        return state
-
-    if not getattr(adaptor, "_started", False):
-        await adaptor.start()
-        await asyncio.sleep(0.5)
-
-    state.logs.append("[invoke_tool] Sending request to DirectoryAgent")
-    try:
-        await adaptor.send_message({
-            "message_type": "message",
-            "recipient_id": prompt.get("recipient_id", "DirectoryAgent"),
-            "sender_id": "main_agent",
-            "message": prompt.get("message", "Empty message"),
-        })
-    except Exception as e:
-        logging.error(f"Error sending message: {e}")
-        return state
-
-    agent_response = None
-    try:
-        agent_response: ToolReturnClass = await asyncio.wait_for(
-            adaptor.receive_message(),
-            timeout=30.0
-        )
-    except asyncio.TimeoutError:
-        logging.error("Timeout waiting for response from DirectoryAgent")
-    except Exception as e:
-        logging.error(f"Receive failed: {e}")
-
-    if agent_response:
-        if agent_response.meta.get("tool_name") in tool_names:
-            state.messages.append(
-                AIMessage(content=agent_response.agent_response))
-        else:
-            logging.error(
-                f"Unrecognized response: {agent_response.agent_response}")
-    else:
-        logging.warning("No response received from agent.")
-
-    return state
