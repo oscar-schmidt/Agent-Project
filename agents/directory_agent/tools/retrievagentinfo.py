@@ -14,14 +14,14 @@ logging.basicConfig(level=logging.INFO,
 
 
 class AgentRegistrationInput(BaseModel):
-    """Input schema for the ReteriveAgent tool."""
+    """Input schema for the RetrieveAgent tool."""
 
     description: str = Field(
         description="A detailed description of the sort of problem the agent needs help with"
     )
     
-class ReteriveAgent(BaseTool):
-    name: str = "RetriveAgentInformation"
+class RetrieveAgent(BaseTool):
+    name: str = "RetrieveAgentInformation"
     description: str = "A tool that allows you to get agent information through semantic search, given a description"
     args_schema: type[BaseModel] = AgentRegistrationInput
     

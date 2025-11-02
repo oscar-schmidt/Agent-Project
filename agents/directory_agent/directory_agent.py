@@ -1,5 +1,5 @@
 import json
-from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
+from agents.directory_agent.tools.retrievagentinfo import RetrieveAgent
 from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from agents.directory_agent.tools.updateagentinfo import UpdateAgentStatus
 from common.tools.communicate import create_comm_tool
@@ -19,7 +19,7 @@ class AgentManager():
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("DirectoryAgent",
                                                     "An agent that given a query can retrieve information on agents that are able to help with that quary",
-                                                    ["RegisterAgentInformation", "RetriveAgentInformaton", "UpdateAgentStatus"])
+                                                    ["RegisterAgentInformation", "RetrieveAgentInformation", "UpdateAgentStatus"])
 
     async def worker(self):
         logging.info("Starting worker thread")
@@ -53,10 +53,10 @@ class AgentManager():
         await self.connection_manager.start_listening(message_handler=self.message_handler)
         communicate = create_comm_tool("DirectoryAgent", self.connection_manager)
         register_agent = RegisterAgent()
-        reteriveagent = ReteriveAgent()
+        retrieveagent = RetrieveAgent()
         updateagent = UpdateAgentStatus()
         #memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
-        tools = [communicate, register_agent, reteriveagent, updateagent]
+        tools = [communicate, register_agent, retrieveagent, updateagent]
         description = (
             """
             # IDENTITY
