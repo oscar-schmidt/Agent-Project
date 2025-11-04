@@ -1,5 +1,5 @@
 import json
-from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
+from agents.directory_agent.tools.retrievagentinfo import RetrieveAgent
 from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from agents.directory_agent.tools.updateagentinfo import UpdateAgentStatus
 from common.tools.communicate import create_comm_tool
@@ -14,13 +14,12 @@ logging.basicConfig(level=logging.INFO,
 class AgentManager():
     """Manages the agent, however needs to be replaced by the AgentManager
            class from the common directory to reduce duplicate code"""
-
     def __init__(self):
         self.chat_manager = ChatManager(name="DirectoryAgent")
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("DirectoryAgent",
                                                     "An agent that given a query can retrieve information on agents that are able to help with that quary",
-                                                    ["RegisterAgentInformation", "RetriveAgentInformaton", "UpdateAgentStatus"])
+                                                    ["RegisterAgentInformation", "RetrieveAgentInformation", "UpdateAgentStatus"])
 
     async def worker(self):
         logging.info("Starting worker thread")
@@ -31,15 +30,14 @@ class AgentManager():
             if task_data["message_type"] == "message":
                 message = f"You have a new message from: sender_id: {task_data['sender_id']}\n+ Message:{task_data['message']}"
             elif task_data["message_type"] == "registration":
-                message = (f"You have a new agent to register: {task_data['agent_id']}\n"
-                           f"Description: {task_data['description']}\n"
+                message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
+                           f"Description:{task_data["description"]}\n+"
                            f"Capabilities: {task_data['capabilities']}")
             elif task_data["message_type"] == "update":
                 message = f"Notification:{task_data['agent_id']} is no longer available."
                 logging.info(message)
             else:
-                logging.info(
-                    f"Unknown message type: {task_data['message_type']}")
+                logging.info(f"Unknown message type: {task_data['message_type']}")
             await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
 
@@ -53,13 +51,12 @@ class AgentManager():
             logging.error(f"Failed to connect: {e}")
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
-        communicate = create_comm_tool(
-            "DirectoryAgent", self.connection_manager)
+        communicate = create_comm_tool("DirectoryAgent", self.connection_manager)
         register_agent = RegisterAgent()
-        reteriveagent = ReteriveAgent()
+        retrieveagent = RetrieveAgent()
         updateagent = UpdateAgentStatus()
-        # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
-        tools = [communicate, register_agent, reteriveagent, updateagent]
+        #memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
+        tools = [communicate, register_agent, retrieveagent, updateagent]
         description = (
             """
             # IDENTITY
