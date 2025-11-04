@@ -3,8 +3,6 @@ import os
 
 load_dotenv()
 
-DATA_PATH = os.getenv("DATA_PATH", ".agents/classification_agent/data/tech_service_reviews_500_with_names_ratings.csv")
-
 # LLM
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 

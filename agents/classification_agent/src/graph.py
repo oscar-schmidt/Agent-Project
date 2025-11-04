@@ -3,8 +3,7 @@ import hashlib
 from typing import List, Tuple
 from langgraph.graph import Graph
 
-from agents.classification_agent.src.config import DATA_PATH, OLLAMA_MODEL
-from agents.classification_agent.src.nodes.load_reviews import load_reviews
+from agents.classification_agent.src.config import OLLAMA_MODEL
 from agents.classification_agent.src.database import load_unprocessed_reviews, mark_reviews_processed, get_processing_stats
 from agents.classification_agent.src.nodes.detect_errors import detect_errors_with_ollama
 from agents.classification_agent.src.nodes.normalize import normalize
@@ -22,24 +21,16 @@ def build_graph() -> Graph:
     g = Graph()
 
     def n_load(_: dict) -> List[RawReview]:
-        use_db = os.getenv("USE_DATABASE", "false").lower() == "true"
+        # Load unprocessed reviews from database
+        stats = get_processing_stats()
+        print(f"Processing stats: {stats['unprocessed']} unprocessed / {stats['total']} total reviews")
 
-        if use_db:
-            #proccessed vs unporcessed stats
-            stats = get_processing_stats()
-            print(f" Processing stats: {stats['unprocessed']} unprocessed / {stats['total']} total reviews")
+        # Load unprocessed reviews
+        data = load_unprocessed_reviews()
 
-            #load unprocessed reviews
-            data = load_unprocessed_reviews()
-
-            if not data:
-                print("All reviews are up to date")
-                return []
-        #DB ERR FALLBACK TO CSV
-        else:
-            data = load_reviews(DATA_PATH)
-            data = data[511:] 
-            print(f"Loaded {len(data)} reviews from CSV")
+        if not data:
+            print("All reviews are up to date")
+            return []
 
         return data
 
@@ -96,7 +87,6 @@ def build_graph() -> Graph:
             return items
 
         dry = os.getenv("NOTION_DRY_RUN", "0") in ("1", "true", "True")
-        use_db = os.getenv("USE_DATABASE", "false").lower() == "true"
         processed_review_ids = []
 
         for i, e in enumerate(items, 1):
@@ -108,18 +98,17 @@ def build_graph() -> Graph:
             else:
                 upsert_enriched_error(e)
 
-            #review IDs for batch processing
-            if use_db:
-                processed_review_ids.append(e.review.review_id)
+            # Collect review IDs for batch processing
+            processed_review_ids.append(e.review.review_id)
 
             if i % 20 == 0:
                 print(f"… processed {i} rows")
 
-        #mark all reviews as processed in batch
-        if use_db and processed_review_ids:
+        # Mark all reviews as processed in batch
+        if processed_review_ids:
             mark_reviews_processed(processed_review_ids)
 
-       
+
         return items
 
     # Nodes
