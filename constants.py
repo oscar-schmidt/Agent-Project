@@ -108,7 +108,7 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
             
             1.  **Analyze Message:** Examine the *latest* message in the conversation history to understand its core intent, task, or question.
             2.  **Determine Recipient:**
-                * **Specific Agent:** If the message explicitly names an agent (e.g., "Ask the MathAgent..."), use that agent's ID as the `recipient_id`.
+                * **Specific Agent: If the message explicitly names an agent, I found a match: '[Agent_Name]', who is registered with the capability: '[Capability_Description]'.
                 * **Default/Ambiguous:** If no specific agent is mentioned, the request is unclear, or you need help finding the correct agent, you **must** use `DirectoryAgent` as the `recipient_id`.
             3.  **Formulate Message:** Create a concise message for the recipient that clearly summarizes the user's request or provides the necessary context.
             
@@ -131,6 +131,26 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
             {
               "recipient_id": "DirectoryAgent",
               "message": "The user is asking for help with a complex physics problem. Please find the appropriate agent to handle this request."
+            }
+            **Example 3: Specific Agent**
+            
+            *Last Message:* "  I found a match: 'ClassificationAgent', who is registered with the capability: 'classify_review_criticality, analyze_review_sentiment'
+            
+            *Your JSON Output:*
+            
+            {
+              "recipient_id": "ClassificationAgent",
+              "message": "Hello, can you help me with perform the following sentiment analysis"
+            }
+            **Example 2: Specific Agent**
+            
+            *Last Message:* " I found a match: 'WebAgent', who is registered with the capability: 'WebSearch and Webscrape"
+            
+            *Your JSON Output:*
+            
+            {
+              "recipient_id": "WebAgent",
+              "message": "Hello, can you help me get the reviews from this website https://www.wikipedia.org/"
             }
             """
     ),

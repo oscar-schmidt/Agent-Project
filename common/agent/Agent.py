@@ -9,7 +9,9 @@ from common.memory.semantic import Semantic
 from common.memory.episodic import Episode
 from config.config_helper import get_model_config
 from common.stores.QdrantStore import QdrantStore
-import sqlite3
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 class Agent:
     """An Agent class"""
@@ -32,8 +34,11 @@ class Agent:
         planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
             (
                 "system",
-                "You are an expert planner, create a concise, step-by-step plan to answer the user's request. Respond with the plan only"
-                f"These are the tools available for use {self.tools}"
+                    "You are an expert planner for a review for a web agent. "
+                    "Create a concise, step-by-step plan to answer the user/agents request. "
+                    "Consider which tools to use and in what order. "
+                    "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
+                    f"Available tools: {[tool.name for tool in self.tools]}\n"
             )
         ]
         plan = self.llm_with_tools.invoke(planner_messages).content
@@ -44,8 +49,9 @@ class Agent:
 
     def chat(self, state: State):
         system_prompt = (
-           self.prompt
+           self.prompt + f"You must follow this plan {state['plan']}"
         )
+        logging.info(system_prompt)
         if state.get('critique') and state['critique'] != 'None':
             system_prompt += f"you must revise your previous answer based on the following critique: {state['critique']}"
         messages_with_prompt = [("system", system_prompt)] + state["messages"]

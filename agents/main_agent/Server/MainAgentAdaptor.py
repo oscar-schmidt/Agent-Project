@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from agents.main_agent.Server.Adaptor import Adaptor
+from agents.main_agent.Server.adaptor import Adaptor
 
 logging.basicConfig(level=logging.INFO)
 
@@ -53,7 +53,7 @@ class MainAgentAdaptor(Adaptor):
                 f"[MainAgentAdaptor] Send failed: {e}", exc_info=True)
             raise
 
-    async def receive_message(self, timeout: float = 30.0):
+    async def receive_message(self, timeout: float = 60.0):
         logging.info(
             f"[MainAgentAdaptor] Waiting for message (timeout={timeout}s)")
         logging.info(
