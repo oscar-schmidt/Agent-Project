@@ -21,17 +21,13 @@ class SentimentTool(BaseTool):
 
     # Pydantic fields - must be declared as class attributes
     sentiment_enabled: bool = True
-    use_database: bool = False
     batch_size: int = 50
-    data_path: str = ""
     _cache: Dict[str, Any] = {}
 
     def __init__(
         self,
         sentiment_enabled: bool = None,
-        use_database: bool = None,
         batch_size: int = 50,
-        data_path: str = None,
         **kwargs
     ):
         """
@@ -39,26 +35,15 @@ class SentimentTool(BaseTool):
 
         Args:
             sentiment_enabled: Whether sentiment analysis is enabled (defaults to env var)
-            use_database: Whether to use database or CSV (defaults to env var)
             batch_size: Maximum batch size for processing
-            data_path: Path to CSV file if not using database
         """
         # Set defaults before calling super().__init__()
         if sentiment_enabled is None:
             sentiment_enabled = os.getenv("ENABLE_SENTIMENT", "true").lower() in ("true", "1", "yes")
 
-        if use_database is None:
-            use_database = os.getenv("USE_DATABASE", "false").lower() == "true"
-
-        if data_path is None:
-            from agents.classification_agent.src.config import DATA_PATH
-            data_path = DATA_PATH
-
         super().__init__(
             sentiment_enabled=sentiment_enabled,
-            use_database=use_database,
             batch_size=batch_size,
-            data_path=data_path,
             _cache={},
             **kwargs
         )
@@ -116,7 +101,7 @@ class SentimentTool(BaseTool):
 
     def _load_unprocessed_reviews(self, limit: int) -> List[RawReview]:
         """
-        Load unprocessed reviews from database or CSV
+        Load unprocessed reviews from database
 
         Args:
             limit: Maximum number of reviews to load
@@ -124,13 +109,7 @@ class SentimentTool(BaseTool):
         Returns:
             List of RawReview objects
         """
-        if self.use_database:
-            return load_unprocessed_reviews(batch_size=limit)
-        else:
-            # Fallback to CSV
-            from agents.classification_agent.src.nodes.load_reviews import load_reviews
-            all_reviews = load_reviews(self.data_path)
-            return all_reviews[:limit]
+        return load_unprocessed_reviews(batch_size=limit)
 
     def _analyze_sentiments(self, reviews: List[RawReview]) -> List[dict]:
         """
@@ -212,12 +191,6 @@ class SentimentTool(BaseTool):
 
             # Load reviews
             if review_ids:
-                if not self.use_database:
-                    return json.dumps({
-                        "error": "Cannot load specific review IDs without database enabled (USE_DATABASE=true)",
-                        "sentiments": [],
-                        "total_analyzed": 0
-                    })
                 reviews = self._load_reviews_by_ids(review_ids)
             else:
                 reviews = self._load_unprocessed_reviews(limit)

@@ -3,7 +3,6 @@ Criticality Classification Tool
 Classify customer reviews by detecting errors and assigning severity levels.
 """
 
-import os
 import json
 from typing import Optional, List, Any, Dict
 from langchain_core.tools import BaseTool
@@ -22,17 +21,13 @@ class CriticalityTool(BaseTool):
 
     # Pydantic fields - must be declared as class attributes
     llm_model: str = AGENT_MODEL  # use same LLM model as agent
-    use_database: bool = True
     batch_size: int = 50
-    data_path: str = ""
     _cache: Dict[str, Any] = {}
 
     def __init__(
         self,
         llm_model: str = None,
-        use_database: bool = None,
         batch_size: int = 50,
-        data_path: str = None,
         **kwargs
     ):
         """
@@ -40,26 +35,15 @@ class CriticalityTool(BaseTool):
 
         Args:
             llm_model: LLM model to use for classification (defaults to config)
-            use_database: Whether to use database or CSV (defaults to env var)
             batch_size: Maximum batch size for processing
-            data_path: Path to CSV file if not using database
         """
         # Set defaults before calling super().__init__()
         if llm_model is None:
             llm_model = AGENT_MODEL
 
-        if use_database is None:
-            use_database = os.getenv("USE_DATABASE", "false").lower() == "true"
-
-        if data_path is None:
-            from agents.classification_agent.src.config import DATA_PATH
-            data_path = DATA_PATH
-
         super().__init__(
             llm_model=llm_model,
-            use_database=use_database,
             batch_size=batch_size,
-            data_path=data_path,
             _cache={},
             **kwargs
         )
@@ -115,7 +99,7 @@ class CriticalityTool(BaseTool):
 
     def _load_unprocessed_reviews(self, limit: int) -> List[RawReview]:
         """
-        Load unprocessed reviews from database or CSV
+        Load unprocessed reviews from database
 
         Args:
             limit: Maximum number of reviews to load
@@ -123,13 +107,7 @@ class CriticalityTool(BaseTool):
         Returns:
             List of RawReview objects
         """
-        if self.use_database:
-            return load_unprocessed_reviews(batch_size=limit)
-        else:
-            # Fallback to CSV
-            from agents.classification_agent.src.nodes.load_reviews import load_reviews
-            all_reviews = load_reviews(self.data_path)
-            return all_reviews[:limit]
+        return load_unprocessed_reviews(batch_size=limit)
 
     def _classify_errors(self, reviews: List[RawReview]) -> List[dict]:
         """
@@ -156,6 +134,21 @@ class CriticalityTool(BaseTool):
                     "severity": error.severity,  # LLM generated severity
                     "rationale": error.rationale
                 })
+
+                # Save error to database
+                from agents.classification_agent.src.database import insert_detected_error
+                print(f"[DEBUG] Inserting error to DB: {review.review_id} - {error.error_summary}")
+                success = insert_detected_error(
+                    review_id=review.review_id,
+                    error_summary=error.error_summary,
+                    error_type=error.error_type,
+                    criticality=error.severity,
+                    rationale=error.rationale
+                )
+                if success:
+                    print(f"[DEBUG] Successfully inserted error for {review.review_id}")
+                else:
+                    print(f"[DEBUG] Failed to insert error for {review.review_id}")
 
             results.append({
                 "review_id": review.review_id,
@@ -189,12 +182,6 @@ class CriticalityTool(BaseTool):
 
             # Load reviews
             if review_ids:
-                if not self.use_database:
-                    return json.dumps({
-                        "error": "Cannot load specific review IDs without database enabled (USE_DATABASE=true)",
-                        "reviews": [],
-                        "total_processed": 0
-                    })
                 reviews = self._load_reviews_by_ids(review_ids)
             else:
                 reviews = self._load_unprocessed_reviews(limit)

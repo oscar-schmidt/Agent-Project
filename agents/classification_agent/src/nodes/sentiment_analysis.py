@@ -46,8 +46,8 @@ class SentimentAnalyzer:
         self.confidence_threshold = confidence_threshold
         self.model_name = model_name
 
-        # Load tokenizer and model
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        # Load tokenizer and model (use slow tokenizer to avoid conversion issues)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
         # Create sentiment pipeline

@@ -2,7 +2,8 @@ from agents.classification_agent.src.agent.tools import (
     classify_review_criticality,
     analyze_review_sentiment,
     log_reviews_to_notion,
-    get_current_datetime
+    get_current_datetime,
+    ingest_review
 )
 from common.tools.communicate import create_comm_tool
 import asyncio
@@ -22,11 +23,12 @@ class AgentManager():
         self.chat_manager = ChatManager(name="ClassificationAgent")
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("ClassificationAgent",
-                                                    "An agent that is able to classify things",
-                                                    [ "classify_review_criticality",
-                                                                "analyze_review_sentiment",
-                                                                "log_reviews_to_notion",
-                                                               "get_current_datetime"]
+                                                    "An agent that can classify reviews, analyze sentiment, and ingest reviews from other agents",
+                                                    ["classify_review_criticality",
+                                                     "analyze_review_sentiment",
+                                                     "log_reviews_to_notion",
+                                                     "get_current_datetime",
+                                                     "ingest_review"]
                                                     )
 
     async def worker(self):
@@ -62,7 +64,8 @@ class AgentManager():
                 classify_review_criticality,
                 analyze_review_sentiment,
                 log_reviews_to_notion,
-                get_current_datetime
+                get_current_datetime,
+                ingest_review
         ]
 
         await self.chat_manager.setup(tools=tools, prompt="", type="classify")

@@ -3,8 +3,6 @@ import os
 
 load_dotenv()
 
-DATA_PATH = os.getenv("DATA_PATH", ".agents/classification_agent/data/tech_service_reviews_500_with_names_ratings.csv")
-
 # LLM
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 
@@ -29,6 +27,9 @@ AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0"))
 AGENT_CHECKPOINT_DB = os.getenv("AGENT_CHECKPOINT_DB", "classification_agent.db")
 AGENT_VERBOSE = os.getenv("AGENT_VERBOSE", "true").lower() in ("true", "1", "yes")
 AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", "10"))
+
+# Database Configuration (Cloud/Supabase support)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Memory Configuration (local, no docker/api needed)
 MEMORY_ENABLED = os.getenv("MEMORY_ENABLED", "false").lower() in ("true", "1", "yes")

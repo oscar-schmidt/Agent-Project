@@ -91,7 +91,6 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-
 """
 @ui.page("/")
 def main():
@@ -100,7 +99,7 @@ def main():
         if not text_to_send:
             return
         user_input.value = ''
-        application.chat_manager.messages.append({'role': 'user', 'content': text_to_send})
+        application.chat_manager.messages.append({'role': 'user', 'content': text_to_sent})
         update_chat_display()
         await application.task_queue.put(text_to_send)
         user_input.value = ''
@@ -157,8 +156,8 @@ def main():
     application.update_ui_callback = update_chat_display
 app.on_startup(application.startup)
 ui.run()
-"""
 
+"""
 
 
 

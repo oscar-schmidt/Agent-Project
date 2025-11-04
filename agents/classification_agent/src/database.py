@@ -8,7 +8,7 @@ import getpass
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'dbname': os.getenv('DB_NAME', 'reviews'),
-    'user': os.getenv('DB_USER', getpass.getuser()), 
+    'user': os.getenv('DB_USER', getpass.getuser()),
     'port': os.getenv('DB_PORT', '5432')
 }
 
@@ -17,7 +17,12 @@ if os.getenv('DB_PASSWORD'):
     DB_CONFIG['password'] = os.getenv('DB_PASSWORD')
 
 def get_connection():
-    """Get database connection"""
+    """Get database connection (DATABASE_URL or DB_* variables)"""
+    from agents.classification_agent.src.config import DATABASE_URL
+
+    if DATABASE_URL:
+        return psycopg.connect(DATABASE_URL)
+
     return psycopg.connect(**DB_CONFIG)
 
 def init_database():
@@ -245,3 +250,44 @@ def insert_new_review(review_text: str, username: str, email: str,
 
     print(f" Added new review {review_id} by {reviewer_name}")
     return review_id
+
+def insert_detected_error(review_id: str, error_summary: str, error_type: str,
+                         criticality: str, rationale: str):
+    """Insert a detected error into the database"""
+    from agents.classification_agent.src.utils import hash_error
+
+    try:
+        # Generate unique hash for the error
+        error_hash = hash_error(review_id, error_summary, error_type)
+        print(f"[DEBUG] Generated error_hash: {error_hash}")
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        print(f"[DEBUG] Executing INSERT for review_id={review_id}, error_type={error_type}, criticality={criticality}")
+        cursor.execute("""
+            INSERT INTO detected_errors
+            (review_id, error_summary, error_type, criticality, rationale, error_hash)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (error_hash) DO NOTHING
+        """, (review_id, error_summary, error_type, criticality, rationale, error_hash))
+
+        rows_affected = cursor.rowcount
+        print(f"[DEBUG] Rows affected: {rows_affected}")
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if rows_affected > 0:
+            print(f"[DEBUG] Successfully inserted error into detected_errors table")
+            return True
+        else:
+            print(f"[DEBUG] Conflict detected - error already exists (ON CONFLICT DO NOTHING)")
+            return True  # Still return True since it's not an error
+    except Exception as e:
+        print(f"[ERROR] Failed to insert detected error: {e}")
+        print(f"[ERROR] Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        return False

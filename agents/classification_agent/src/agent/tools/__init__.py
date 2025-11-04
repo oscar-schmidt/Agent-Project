@@ -11,6 +11,7 @@ from agents.classification_agent.src.agent.tools.criticality_tool import classif
 from agents.classification_agent.src.agent.tools.sentiment_tool import analyze_review_sentiment
 from agents.classification_agent.src.agent.tools.notion_tool import log_reviews_to_notion
 from agents.classification_agent.src.agent.tools.date_time import get_current_datetime
+from agents.classification_agent.src.agent.tools.ingest_review_tool import ingest_review
 
 __all__ = [
     # Tool classes (for direct instantiation with custom config)
@@ -22,5 +23,6 @@ __all__ = [
     "classify_review_criticality",
     "analyze_review_sentiment",
     "log_reviews_to_notion",
-    "get_current_datetime"
+    "get_current_datetime",
+    "ingest_review"
 ]
