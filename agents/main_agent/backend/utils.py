@@ -13,6 +13,7 @@ import numpy as np
 from openai import OpenAI
 from functools import wraps
 from transformers import pipeline
+from constants import SYSTEM_PROMPT_LIST
 from agents.main_agent.backend.model.states.StateManager import StateManager
 from langchain_core.messages import HumanMessage
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState

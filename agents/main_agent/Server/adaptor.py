@@ -1,10 +1,8 @@
-from asyncio import Queue
 import asyncio
 import json
 import logging
-from typing import Optional
-from agents.main_agent.Server.ConnectionManager import ConnectionManager
-from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
+from typing import Optional, Callable
+from common.ConnectionManager import ConnectionManager
 
 
 class Adaptor:
@@ -25,18 +23,35 @@ class Adaptor:
                 cls._instance = cls(agent_id, description, capabilities)
         return cls._instance
 
+    async def start(self, handler: Callable):
+        logging.info(f"[{self.agent_id}] start() called")
 
-async def start(self, handler):
-    logging.info(f"[{self.agent_id}] start() called with handler={handler}")
+        if self._started:
+            logging.info(f"[{self.agent_id}] Already started, skipping")
+            return
 
-    if self._started:
-        logging.info(f"[{self.agent_id}] Already started, skipping")
-        return
+        try:
+            await self.connection.connect()
+            logging.info(f"[{self.agent_id}] Connected to WebSocket server")
 
-    await self.connection.connect()
-    logging.info(f"[{self.agent_id}] Connected to WebSocket server")
+            await self.connection.start_listening(handler)
+            logging.info(f"[{self.agent_id}] Listening task started")
 
-    asyncio.create_task(self.connection.start_listening(handler))
-    logging.info(f"[{self.agent_id}] Listening task started in background")
+            self._started = True
 
-    self._started = True
+        except Exception as e:
+            logging.error(
+                f"[{self.agent_id}] Failed to start: {e}", exc_info=True)
+            raise
+
+    async def send(self, payload: dict):
+        if not self._started:
+            raise RuntimeError(f"[{self.agent_id}] Adaptor not started")
+
+        await self.connection.send(payload)
+
+    async def stop(self):
+        if self._started:
+            await self.connection.disconnect()
+            self._started = False
+            logging.info(f"[{self.agent_id}] Adaptor stopped")

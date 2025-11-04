@@ -24,7 +24,7 @@ class ConnectionManager:
             await self._register()
         except websockets.exceptions.ConnectionClosedError:
             logging.info("Connection Closed")
-            self.websocket = None
+            self._websocket = None
             await asyncio.sleep(5)
         except Exception as e:
             logging.info(f"Error: {e}")
@@ -64,22 +64,21 @@ class ConnectionManager:
                 raise ConnectionError
             else:
                 try:
-                    async with self._websocket as websocket:
-                        async for message in websocket:
-                            task_data = json.loads(message)
-                            logging.info(f"Received message: {task_data}")
-                            await message_handler(task_data)
+                    async for message in self._websocket:
+                        task_data = json.loads(message)
+                        logging.info(f"Received message: {task_data}")
+                        await message_handler(task_data)
                 except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
                     logging.error(error)
-                    self.websocket = None
+                    self._websocket = None
                     await self.connect()
                     await asyncio.sleep(5)
                 except Exception as error:
                     logging.error(f"Error: {error}")
-                    self.websocket = None
+                    self._websocket = None
                     await self.connect()
                     await asyncio.sleep(5)
 
     async def close(self):
-        self._websocket.close()
+        await self._websocket.close()
         self._websocket = None

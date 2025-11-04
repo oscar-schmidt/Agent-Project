@@ -3,6 +3,7 @@ import os
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.utils import get_user_input, log_decorator
 from constants import SYSTEM_PROMPT_LIST
+from langchain_core.messages import AIMessage
 
 load_dotenv()
 

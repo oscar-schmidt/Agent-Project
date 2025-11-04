@@ -4,7 +4,7 @@ import os
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
 from agents.main_agent.backend.tools.base_tool import BaseTool
-from agents.main_agent.backend.utils import get_user_input, log_decorator
+from agents.main_agent.backend.utils import get_user_input
 from constants import SYSTEM_PROMPT_LIST
 
 load_dotenv()
@@ -31,17 +31,19 @@ class finalized_tool(BaseTool):
         should_recall: bool = args.get("should_recall", False)
         user_input = get_user_input()
 
-        recent_msgs = state.messages[-6:] if len(
-            state.messages) > 3 else state.messages
+        recent_msgs = [state.messages[-1]] if state.messages else []
 
-        latest_tool_outputs = []
-        if hasattr(state, "tool_outputs") and state.tool_outputs:
-            latest_tool_outputs = [
-                tool_response for tool_response in state.tool_outputs[-6:] if tool_response.get("agent_response")
-            ]
+        latest_tool_outputs = [
+            tool for tool in state.tool_outputs
+            if tool.get("tool") != "finalized_tool"
+        ]
 
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT_LIST.finalized_tool_prompt}]
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT_LIST.finalized_tool_prompt
+            }
+        ]
 
         for msg in recent_msgs:
             if isinstance(msg, HumanMessage):
@@ -49,17 +51,19 @@ class finalized_tool(BaseTool):
             elif isinstance(msg, AIMessage):
                 messages.append({"role": "assistant", "content": msg.content})
 
-        for tool_output in latest_tool_outputs:
-            tool_name = tool_output.get("tool", "unknown_tool")
-            agent_response = tool_output.get("agent_response", "")
+        if latest_tool_outputs:
+            tool_summary = "\n\n".join([
+                f"[Tool: {t.get('tool', 'unknown_tool')}] {t.get('agent_response', '')}"
+                for t in latest_tool_outputs
+            ])
             messages.append({
                 "role": "assistant",
-                "content": f"[Tool Output - {tool_name}] {agent_response}"
+                "content": f"Here are the latest tool results:\n{tool_summary}"
             })
 
         messages.append({
             "role": "user",
-            "content": user_input or "Please answer concisely based on the latest tool results."
+            "content": user_input or "Please summarize clearly and factually based on the tool results."
         })
 
         if LLM_PROVIDER == "openai":
@@ -76,8 +80,8 @@ class finalized_tool(BaseTool):
         if should_recall:
             state.tool_outputs.append({
                 "tool": "finalized_tool",
-                "agent_response": content}
-            )
+                "agent_response": content
+            })
         else:
             state.messages.append(AIMessage(content=content))
 

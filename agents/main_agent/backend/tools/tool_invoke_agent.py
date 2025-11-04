@@ -132,15 +132,14 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
             "state": new_state,
             "should_recall": should_recall
         })
-        new_state = command("chat_tool", finalized_result)
 
         should_recall = critique(user_input, finalized_result.agent_response)
 
         if should_recall:
             format_data = prompt_generator(finalized_result.agent_response)
             directory_message = format_data.get("message")
-            # await main_agent.send_message(recipient_id="DirectoryAgent", message=directory_message)
-            await main_agent.send_message(recipient_id="WebAgent", message=directory_message)
+            await main_agent.send_message(recipient_id="DirectoryAgent", message=directory_message)
+            # await main_agent.send_message(recipient_id="WebAgent", message=directory_message)
             directory_response = await main_agent.receive_message()
             if not directory_response:
                 logging.info("No response from DirectoryAgent.")
@@ -152,22 +151,31 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
                 dir_data = json.loads(directory_response)
                 format_data = prompt_generator(dir_data)
                 recipient_id = format_data.get("recipient_id")
+                sender_id = format_data.get("sender_id")
                 next_message = format_data.get("message")
             except json.JSONDecodeError:
                 logging.info("DirectoryAgent returned invalid JSON.")
                 break
 
             await main_agent.send_message(recipient_id=recipient_id, message=next_message)
+            # await main_agent.send_message(recipient_id="WebAgent", message=next_message)
             agent_response = await main_agent.receive_message()
-            logging.info(f"Response from {recipient_id}: {agent_response}")
+            logging.info(f"Response from {sender_id}: {agent_response}")
 
             finalized_result.agent_response = agent_response
+            agent_obj = json.loads(agent_response)
+            new_state.tool_outputs.append({
+                "tool": agent_obj["sender_id"],
+                "agent_response": agent_obj["message"]})
 
         attempt += 1
 
+    new_state.tool_outputs = [
+        tool for tool in new_state.tool_outputs if tool.get("tool") != "finalized_tool"
+    ]
+
     finalized_result = await finalized_tool().ainvoke({"state": new_state, "should_recall": False})
-    final_state = command("chat_tool", finalized_result)
-    return final_state
+    return finalized_result.state
 
 
 async def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphState:
