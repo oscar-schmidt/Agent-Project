@@ -31,7 +31,7 @@ class finalized_tool(BaseTool):
         should_recall: bool = args.get("should_recall", False)
         user_input = get_user_input()
 
-        recent_msgs = [state.messages[-8]] if state.messages else []
+        recent_msgs = state.messages[-8:] if state.messages else []
 
         latest_tool_outputs = [
             tool for tool in state.tool_outputs

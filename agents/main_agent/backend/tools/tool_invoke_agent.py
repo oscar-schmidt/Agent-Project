@@ -160,10 +160,11 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
             await main_agent.send_message(recipient_id=recipient_id, message=next_message)
             # await main_agent.send_message(recipient_id="WebAgent", message=next_message)
             agent_response = await main_agent.receive_message()
-            logging.info(f"Response from {sender_id}: {agent_response}")
 
             finalized_result.agent_response = agent_response
             agent_obj = json.loads(agent_response)
+            logging.info(
+                f"Response from {agent_obj['sender_id']}: {agent_response}")
             new_state.tool_outputs.append({
                 "tool": agent_obj["sender_id"],
                 "agent_response": agent_obj["message"]})
