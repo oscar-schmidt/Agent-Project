@@ -108,7 +108,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 """
-
+"""
 @ui.page("/")
 def main():
     async def handle_submit():
@@ -174,7 +174,7 @@ def main():
 app.on_startup(application.startup)
 ui.run()
 
-
+"""
 
 
 
