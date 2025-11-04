@@ -25,10 +25,15 @@ SUMMARIZER_MODEL = os.getenv("SUMMARIZER_MODEL")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 EMBED_MODEL = os.getenv("EMBED_MODEL")
 summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
-provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
-if provider == "openai":
+if LLM_PROVIDER == "openai":
+    import openai
     client = OpenAI(api_key=OPENAI_API_KEY)
+    openai.api_key = OPENAI_API_KEY
+else:
+    from ollama import chat
 
 
 def log_decorator(function):
@@ -74,7 +79,7 @@ def get_chunk(data: str, chunk_size: int, chunk_overlap: int) -> list[str]:
 def get_embedding(chunk: str):
     if isinstance(chunk, str):
         chunk = [chunk]
-    if provider == "openai":
+    if LLM_PROVIDER == "openai":
         response = client.embeddings.create(
             model=os.getenv("OPENAI_EMBED_MODEL"),
             input=chunk
@@ -100,7 +105,7 @@ def load_model():
 
 
 def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_len: Optional[int] = None) -> str:
-    if provider == "openai":
+    if LLM_PROVIDER == "openai":
         resp = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
@@ -110,7 +115,7 @@ def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_
         )
         return resp.choices[0].message.content.strip()
 
-    elif provider == "ollama":
+    elif LLM_PROVIDER == "ollama":
         single_chunk_len = len(single_chunk.split())
         max_new = max_len if max_len else max(1, single_chunk_len // 2)
         min_new = min_len if min_len else min(50, single_chunk_len)
@@ -157,12 +162,33 @@ def sanitize_doc_name(doc_name: str) -> str:
     return base_name + ext
 
 
-def get_user_input() -> str:
+def get_user_input(format_embedding_user_query: bool = False) -> str:
     state = StateManager.get_state()
-
     user_messages = [
         msg for msg in state.messages if isinstance(msg, HumanMessage)]
 
-    if user_messages:
-        return user_messages[-1].content
-    return ""
+    if not user_messages:
+        return ""
+
+    last_user_message = user_messages[-1].content.strip()
+
+    if not format_embedding_user_query:
+        return last_user_message
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT_LIST.embed_user_input_prompt},
+        {"role": "user", "content": last_user_message}
+    ]
+
+    if LLM_PROVIDER == "openai":
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=messages,
+        )
+        message_content = response.choices[0].message.content.strip()
+    else:
+        response = chat(OLLAMA_MODEL, messages)
+        message_content = getattr(
+            response.message, "content", None) or "No response."
+
+    return message_content

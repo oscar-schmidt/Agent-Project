@@ -8,7 +8,7 @@ from agents.main_agent.backend.model.states.StateManager import StateManager
 from agents.main_agent.backend.model.states.graph_state.GraphState import GraphState
 from agents.main_agent.backend.model.states.qa_state.DocTextClass import Meta
 from agents.main_agent.backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
-from agents.main_agent.backend.utils import get_embedding, get_user_input, log_decorator
+from agents.main_agent.backend.utils import get_embedding, get_user_input, log_decorator, sanitize_doc_name
 
 load_dotenv()
 

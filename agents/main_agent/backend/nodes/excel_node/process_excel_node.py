@@ -36,6 +36,8 @@ async def process_excel_node(state: GraphState) -> GraphState:
 
         full_text_for_embedding = "\n".join([
             review_text,
+            f"Reviewer: {meta.reviewer}",
+            f"ErrorType: {meta.error_type}",
             f"Criticality: {meta.criticality}",
             f"Rationale: {meta.rationale}",
             f"File Name: {doc_name}"

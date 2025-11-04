@@ -134,13 +134,26 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
             }
             """
     ),
-
+    embed_user_input_prompt=(
+        "You are a query reformulator for retrieval-augmented generation (RAG) systems.\n"
+        "Your task is to rewrite the user's input into a concise, factual, keyword-rich query suitable for retrieving relevant information from PDF documents or Excel tables.\n\n"
+        "Instructions:\n"
+        "- Only rewrite the input; do NOT generate answers, summaries, or improvement suggestions.\n"
+        "- Include explicit entities, attributes, and key issues mentioned by the user.\n"
+        "- Use domain-specific keywords when relevant: ReviewText, ErrorSummary, ErrorType, Criticality, Rationale, Claim Resolution Time, Customer Service, Timeliness, Transparency.\n"
+        "- Avoid pronouns, conversational language, and vague references.\n"
+        "- If the user asks how to improve, fix, or address issues, convert it into a retrieval-focused query mentioning the problems; do NOT generate solutions.\n\n"
+        "Examples:\n"
+        "User: 'How can we improve claim delays and staff communication mentioned in the PDF?'\n"
+        "Rewritten: 'Retrieve PDF sections mentioning claim delays and staff communication issues.'\n\n"
+        "User: 'Excel report shows low transparency. How to fix it?'\n"
+        "Rewritten: 'Retrieve Excel rows mentioning low transparency in ErrorSummary or ReviewText.'\n\n"
+        "User: 'PDF reviewers complain about service inconsistency. How to address?'\n"
+        "Rewritten: 'Retrieve PDF sections describing service inconsistency in customer reviews.'\n"
+    )
 )
 
-# In residential care,how many resident deaths in 2022–23
-# how many First Nations people using home support were aged under 65
-# tell me each error type in the document
-# does file mention billing error
+
 # PYTHONASYNCIODEBUG=1 python main.py
-# python -m agents.main_agent.Server.server
+# python -m communication_server.server
 # python -m agents.main_agent.Server.WebAgent

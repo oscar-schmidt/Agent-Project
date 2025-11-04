@@ -19,7 +19,7 @@ def rag_router(state: GraphState) -> str:
 
     log_template = SYSTEM_LOG_LIST.rag_router_log_template
 
-    user_input = get_user_input()
+    user_input = get_user_input(True)
     if not user_input:
         state.logs.append(log_template.no_user_input_error)
         return "FALSE"

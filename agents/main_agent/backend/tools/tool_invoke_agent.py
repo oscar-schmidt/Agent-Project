@@ -117,7 +117,7 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
     tool_name_args = get_tool_name_list(message, state)
     user_input = get_user_input()
     new_state = state
-    max_attempts = 3
+    max_attempts = 2
     attempt = 0
     should_recall = True
 
