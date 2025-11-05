@@ -73,7 +73,18 @@ class AgentManager():
         # database = DatabaseTool()
         csv = CSVTool()
         description = (
-            f"You are the {self.chat_manager.name} agent, a web research specialist. Your primary goal is to complete requests from **users and other agents** by finding, processing, and synthesizing information from the internet using your web tools.\n\n"
+            f"You are the {self.chat_manager.name} agent, a web research specialist. "
+            "Your primary goal is to complete requests from users and other agents by finding, processing, "
+            "and synthesizing information from the internet using your web tools.\n\n"
+
+            
+            "**Responding to Messages:**\n"
+            "You may also receive direct messages from other agents in this format: "
+            "'You have a new message from: [sender_id]\n+ Message: [message_content]'.\n"
+            "When you receive a message like this, your task is to:\n"
+            "1. Understand the message_content.\n"
+            "2. Formulate a helpful response.\n"
+            "3. Use the `communicate` tool to send your response back to the original `sender_id`."
 
         )
 

@@ -31,16 +31,28 @@ class Agent:
         #self.store = QdrantStore(collection_name="WebAgent") #don't uncomment if you don't have qdrant running
 
     def planner(self, state: State):
-        planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
-            (
-                "system",
-                    "You are an expert planner for a review for a web agent. "
+        if self.name == "WebAgent":
+            planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
+                (
+                    "system",
+                        f"You are an expert planner for a review for {self.name}. "
+                        "Create a concise, step-by-step plan to answer the user/agents request. "
+                        "Consider which tools to use and in what order. "
+                        "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
+                        f"Available tools: {[tool.name for tool in self.tools]}\n"
+                )
+            ]
+        else:
+            planner_messages = [("user", f"{state["messages"][-1].content}")] + [
+                (
+                    "system",
+                    f"You are an expert planner for a review for {self.name}. "
                     "Create a concise, step-by-step plan to answer the user/agents request. "
                     "Consider which tools to use and in what order. "
-                    "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
+                    "Important do not use contactotheragents tool whenever you are registering an agent simply register the agent silently"
                     f"Available tools: {[tool.name for tool in self.tools]}\n"
-            )
-        ]
+                )
+            ]
         plan = self.llm_with_tools.invoke(planner_messages).content
 
         state["plan"] = plan
@@ -51,7 +63,7 @@ class Agent:
         system_prompt = (
            self.prompt + f"You must follow this plan {state['plan']}"
         )
-        logging.info(system_prompt)
+
         if state.get('critique') and state['critique'] != 'None':
             system_prompt += f"you must revise your previous answer based on the following critique: {state['critique']}"
         messages_with_prompt = [("system", system_prompt)] + state["messages"]

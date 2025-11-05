@@ -121,7 +121,8 @@ class AgentManager():
             
             ---
             **CRITICAL DIRECTIVE:** Your value is in your knowledge of the network, not in executing tasks. **Under no circumstances should you 
-            ever attempt to fulfill a task request yourself.** Your only output is a message to another agent.
+            ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You do not need to contact other agents when they are registering silently register them
+            
 
            """)
         await self.chat_manager.setup(tools=tools, prompt=description, type="web")
