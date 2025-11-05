@@ -142,8 +142,13 @@ class ReviewAgent:
             "Step 2: classify_review_criticality\n"
             "Step 3: analyze_review_sentiment\n"
             "Step 4: log_reviews_to_notion\n"
-            "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<summary>) - if request came from another agent\n\n"
+            "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<detailed_summary>) - if request came from another agent\n\n"
             "CRITICAL: ContactOtherAgents is MANDATORY for agent messages. It's a separate tool call, not commentary.\n"
+            "The message should include:\n"
+            "- Review text\n"
+            "- Classification results (criticality level: P0/P1/P2/P3, error categories detected)\n"
+            "- Sentiment analysis results (overall sentiment, specific aspects)\n"
+            "- Confirmation that results were logged to Notion\n\n"
             "For courtesy messages ('Thank you'), create plan: '1. No action needed (courtesy message)'\n"
         )
 

@@ -77,13 +77,30 @@ class AgentManager():
             "Your primary goal is to complete requests from users and other agents by finding, processing, "
             "and synthesizing information from the internet using your web tools.\n\n"
 
-            
+            "**Your Capabilities:**\n"
+            "- WebSearch: Search the internet for information\n"
+            "- Webscrape: Extract data from web pages\n"
+            "- DateTime: Get current date and time\n"
+            "- CSV: Work with CSV files\n\n"
+
+            "**CRITICAL WORKFLOW RULES:**\n"
+            "1. **If the request contains keywords:** 'classify', 'sentiment', 'notion', 'review', 'log' - "
+            "IMMEDIATELY use the communicate tool to contact 'DirectoryAgent' with the EXACT user request. DO NOT do anything else.\n"
+            "2. **ONLY use web tools** (WebSearch, Webscrape) when explicitly asked to search the internet or scrape websites.\n"
+            "3. **DO NOT:**\n"
+            "   - Search the web for sentiment analysis tools\n"
+            "   - Try to classify reviews yourself\n"
+            "   - Contact agents that don't exist (like 'NotionAgent')\n"
+            "   - Invent your own workflow\n\n"
+
+            "**FOR CLASSIFICATION/SENTIMENT/NOTION REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
+
             "**Responding to Messages:**\n"
             "You may also receive direct messages from other agents in this format: "
             "'You have a new message from: [sender_id]\n+ Message: [message_content]'.\n"
             "When you receive a message like this, your task is to:\n"
             "1. Understand the message_content.\n"
-            "2. Formulate a helpful response.\n"
+            "2. Formulate a helpful response using your web research capabilities.\n"
             "3. Use the `communicate` tool to send your response back to the original `sender_id`."
 
         )
@@ -94,14 +111,14 @@ class AgentManager():
 
 
 #knowledge = IngestKnowledge()
-
+"""
 async def main():
     application = AgentManager()
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":
     asyncio.run(main())
-
+"""
 application = AgentManager()
 
 @ui.page("/")
