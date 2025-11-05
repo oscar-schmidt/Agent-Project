@@ -53,7 +53,7 @@ class MainAgentAdaptor(Adaptor):
                 f"[MainAgentAdaptor] Send failed: {e}", exc_info=True)
             raise
 
-    async def receive_message(self, timeout: float = 60.0):
+    async def receive_message(self, timeout: float = 180.0):
         logging.info(
             f"[MainAgentAdaptor] Waiting for message (timeout={timeout}s)")
         logging.info(
