@@ -46,7 +46,9 @@ def rag_agent(state: GraphState) -> GraphState:
         )
         content = response.message.content
 
-    state.messages.append(
-        AIMessage(content=content))
+    state.tool_outputs.append({
+        "tool": "rag_agent",
+        "agent_response": content
+    })
     state.logs.append(f"[rag_agent] prompt: {prompt}")
     return state

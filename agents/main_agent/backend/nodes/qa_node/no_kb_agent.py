@@ -41,5 +41,8 @@ async def no_kb_agent(state: GraphState) -> GraphState:
         )
         content = response.message.content
 
-    state.messages.append(AIMessage(content=content))
+    state.tool_outputs.append({
+        "tool": "no_kb_agent",
+        "agent_response": content
+    })
     return state
