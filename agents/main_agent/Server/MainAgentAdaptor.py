@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from agents.main_agent.Server.adaptor import Adaptor
+from agents.main_agent.Server.Adaptor import Adaptor
 
 logging.basicConfig(level=logging.INFO)
 

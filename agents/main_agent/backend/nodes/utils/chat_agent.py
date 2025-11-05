@@ -50,7 +50,9 @@ def chat_agent(state: GraphState) -> GraphState:
         )
         message_content = response.message.content
 
-    state.logs.append(system_prompt)
-    state.messages.append(AIMessage(content=message_content))
+    state.tool_outputs.append({
+        "tool": "chat_agent",
+        "agent_response": message_content
+    })
 
     return state

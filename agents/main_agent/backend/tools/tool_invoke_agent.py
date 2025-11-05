@@ -122,19 +122,15 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
     should_recall = True
 
     main_agent = await MainAgentAdaptor.create()
-
     while attempt < max_attempts and should_recall:
-
         for tool_name, args in tool_name_args:
             new_state = await execute_tool(tool_name, args, bind_tools, new_state)
-
         finalized_result = await finalized_tool().ainvoke({
             "state": new_state,
             "should_recall": should_recall
         })
-
         should_recall = critique(user_input, finalized_result.agent_response)
-
+        # should_recall = False
         if should_recall:
             format_data = prompt_generator(finalized_result.agent_response)
             directory_message = format_data.get("message")
@@ -144,9 +140,7 @@ async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
             if not directory_response:
                 logging.info("No response from DirectoryAgent.")
                 break
-
             logging.info("Response from DirectoryAgent: {directory_response}")
-
             try:
                 dir_data = json.loads(directory_response)
                 format_data = prompt_generator(dir_data)

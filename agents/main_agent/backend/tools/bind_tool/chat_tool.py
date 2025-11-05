@@ -46,8 +46,6 @@ class chat_tool(BaseTool):
             )
             answer = response.message.content.strip()
 
-        state.messages.append(AIMessage(content=answer))
-
         return ToolReturnClass(
             state=state,
             agent_response=answer if answer else "No response",
