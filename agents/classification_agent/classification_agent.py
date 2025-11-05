@@ -23,7 +23,7 @@ class AgentManager():
         self.chat_manager = ChatManager(name="ClassificationAgent")
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("ClassificationAgent",
-                                                    "An agent that can classify reviews, analyze sentiment, and ingest reviews from other agents",
+                                                    "An agent that performs complete review analysis workflow: ingests reviews, classifies criticality, analyzes sentiment, and logs all results to Notion database. This agent handles the ENTIRE workflow end-to-end.",
                                                     ["classify_review_criticality",
                                                      "analyze_review_sentiment",
                                                      "log_reviews_to_notion",

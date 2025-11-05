@@ -137,13 +137,13 @@ class ReviewAgent:
         system_msg = (
             "Create a numbered step-by-step plan. Each step = ONE tool call.\n"
             f"Available tools: {[tool.name for tool in self.tools]}\n\n"
-            "For messages from agents (WebAgent, etc.) requesting classification + Notion logging:\n"
+            "For review classification requests:\n"
             "Step 1: ingest_review (if raw review text provided)\n"
             "Step 2: classify_review_criticality\n"
             "Step 3: analyze_review_sentiment\n"
             "Step 4: log_reviews_to_notion\n"
-            "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<summary>)\n\n"
-            "CRITICAL: Step 5 is MANDATORY for agent messages. It's a separate tool call, not commentary.\n"
+            "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<summary>) - if request came from another agent\n\n"
+            "CRITICAL: ContactOtherAgents is MANDATORY for agent messages. It's a separate tool call, not commentary.\n"
             "For courtesy messages ('Thank you'), create plan: '1. No action needed (courtesy message)'\n"
         )
 
@@ -249,24 +249,42 @@ class ReviewAgent:
                 if AGENT_VERBOSE:
                     print(f"[{self.name}] >> ENFORCING step 3: analyze_review_sentiment")
             # Step 4: Enforce logging if both classify and sentiment done but logging not done
-            elif "log_reviews_to_notion" in state["plan"] and has_classify and has_sentiment and not has_logged:
-                system_prompt = "IMMEDIATE INSTRUCTION: Call log_reviews_to_notion tool NOW with merged JSON from classify and sentiment. Do not call any other tool.\n\n" + system_prompt
+            # ALWAYS require logging - don't check if it's in the plan
+            elif has_classify and has_sentiment and not has_logged and not has_replied:
+                enforcement_msg = "!!!CRITICAL MANDATORY INSTRUCTION!!!\n\nYou MUST call log_reviews_to_notion tool RIGHT NOW.\nDo NOT call ContactOtherAgents.\nDo NOT call any other tool.\nDo NOT respond with text.\nONLY call log_reviews_to_notion with the merged JSON from classify and sentiment results.\n\nThis is NOT negotiable. Call log_reviews_to_notion NOW.\n\n" + system_prompt
+                system_prompt = enforcement_msg
                 if AGENT_VERBOSE:
-                    print(f"[{self.name}] >> ENFORCING step 4: log_reviews_to_notion")
+                    print(f"[{self.name}] >> ENFORCING step 4: log_reviews_to_notion (REQUIRED - BLOCKING ContactOtherAgents)")
             # Step 5: Enforce ContactOtherAgents if all other steps done
             elif not has_replied:
-                # Check if all other planned steps are complete
-                classify_done = "classify_review_criticality" not in state["plan"] or has_classify
-                sentiment_done = "analyze_review_sentiment" not in state["plan"] or has_sentiment
-                logging_done = "log_reviews_to_notion" not in state["plan"] or has_logged
+                # Check if all required steps are complete
+                classify_done = has_classify
+                sentiment_done = has_sentiment
+                logging_done = has_logged  # MUST actually be logged, not just skipped from plan
 
                 if classify_done and sentiment_done and logging_done:
                     system_prompt = "STOP. You have completed all data processing. You MUST now call the ContactOtherAgents TOOL to reply to the sender. DO NOT write a summary. DO NOT output text. ONLY call the ContactOtherAgents tool with recipient_id and message parameters. This is MANDATORY.\n\n" + system_prompt
                     if AGENT_VERBOSE:
                         print(f"[{self.name}] >> ENFORCING step 5: ContactOtherAgents")
 
-        # Invoke LLM with tools
-        ai_response = self.llm_with_tools.invoke(messages_with_prompt)
+        # Dynamically filter tools based on workflow state
+        # If logging hasn't been done but classify and sentiment are done, ONLY allow log_reviews_to_notion
+        tools_to_use = self.llm_with_tools
+        if state.get("plan") and "ContactOtherAgents" in state["plan"]:
+            has_classify = "classify_review_criticality" in tools_called
+            has_sentiment = "analyze_review_sentiment" in tools_called
+            has_logged = "log_reviews_to_notion" in tools_called
+            has_replied = "ContactOtherAgents" in tools_called
+
+            if has_classify and has_sentiment and not has_logged and not has_replied:
+                # Filter tools to ONLY log_reviews_to_notion
+                filtered_tools = [t for t in self.tools if t.name == "log_reviews_to_notion"]
+                tools_to_use = self.llm.bind_tools(filtered_tools)
+                if AGENT_VERBOSE:
+                    print(f"[{self.name}] >> FILTERING tools to ONLY: log_reviews_to_notion")
+
+        # Invoke LLM with (possibly filtered) tools
+        ai_response = tools_to_use.invoke(messages_with_prompt)
 
         if AGENT_VERBOSE:
             if hasattr(ai_response, "tool_calls") and ai_response.tool_calls:

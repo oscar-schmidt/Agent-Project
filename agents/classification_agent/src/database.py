@@ -258,7 +258,7 @@ def insert_detected_error(review_id: str, error_summary: str, error_type: str,
 
     try:
         # Generate unique hash for the error
-        error_hash = hash_error(review_id, error_summary, error_type)
+        error_hash = hash_error(review_id, error_summary)
         print(f"[DEBUG] Generated error_hash: {error_hash}")
 
         conn = get_connection()

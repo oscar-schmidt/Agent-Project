@@ -120,8 +120,10 @@ class AgentManager():
             3.  **Reply to Sender**: Use the `ContactOtherAgents` tool to send this reply back to the sender.
             
             ---
-            **CRITICAL DIRECTIVE:** Your value is in your knowledge of the network, not in executing tasks. **Under no circumstances should you 
-            ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You do not need to contact other agents when they are registering silently register them
+            **CRITICAL DIRECTIVE:** Your value is in your knowledge of the network, not in executing tasks. **Under no circumstances should you
+            ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You do not need to contact other agents when they are registering silently register them.
+
+            **IMPORTANT:** When forwarding requests to specialist agents, forward the ORIGINAL request WITHOUT adding instructions like "do not perform X" or "I will handle Y". Each specialist agent has their own complete workflow - let them execute it fully
             
 
            """)
