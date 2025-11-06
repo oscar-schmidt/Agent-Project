@@ -93,16 +93,23 @@ class AgentManager():
             "   - Contact agents that don't exist (like 'NotionAgent')\n"
             "   - Invent your own workflow\n\n"
 
-            "**FOR CLASSIFICATION/SENTIMENT/NOTION REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
-
-            "**Responding to Messages:**\n"
-            "You may also receive direct messages from other agents in this format: "
-            "'You have a new message from: [sender_id]\n+ Message: [message_content]'.\n"
-            "When you receive a message like this, your task is to:\n"
-            "1. Understand the message_content.\n"
-            "2. Formulate a helpful response using your web research capabilities.\n"
-            "3. Use the `communicate` tool to send your response back to the original `sender_id`."
-
+           
+            "**For CLASSIFICATION/SENTIMENT/NOTION REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
+            "**For INVENTORY/SALES REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
+            
+            """
+            **Responding to Messages:**
+            You may receive direct messages from other agents in this format:
+            'You have a new message from: [sender_id]
+            Message: [message_content]'
+            
+            **CRITICAL PROTOCOL: YOU MUST ALWAYS REPLY TO EVERY MESSAGE RECEIVED.**
+            
+            When you receive a message, your mandatory task is to:
+            1. Parse and understand the `message_content`.
+            2. Formulate a relevant and helpful response using your available capabilities (including web research if necessary to obtain the requested information).
+            3. Use the `communicate` tool to send your response back to the original `sender_id`. Do not fail to close this communication loop.
+            """
         )
 
         tools = [communicate, websearch, webscrape, datetime, csv]
@@ -111,7 +118,7 @@ class AgentManager():
 
 
 #knowledge = IngestKnowledge()
-"""
+
 async def main():
     application = AgentManager()
     await application.startup()
@@ -185,7 +192,7 @@ def main():
     application.update_ui_callback = update_chat_display
 app.on_startup(application.startup)
 ui.run()
-
+"""
 
 
 

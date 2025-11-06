@@ -18,13 +18,21 @@ class AgentManager():
            class from the common directory to reduce duplicate code"""
 
     def __init__(self):
-        self.chat_manager = ChatManager(name="SQL2PDF")
+        self.chat_manager = ChatManager(name="InventoryAgent")
         self.task_queue = asyncio.Queue()
-        self.connection_manager = ConnectionManager("SQL2PDF",
-                                                    "An agent that is able to generate PDF reports from SQL databases based on user queries.",
+        self.connection_manager = ConnectionManager("InventoryAgent",
+                                                    """I am the Inventory Agent. I have direct access to our live inventory database.
+                                                                
+                                                                My purpose is to help you with any questions related to our stock. I can:
+                                                                
+                                                                * Look up any item by its name or SKU to tell you how many we have and where it is.
+                                                                * Generate reports to show you what's running low, what's overstocked, or provide a complete list of all items.
+                                                                
+                                                                Just tell me what you need to know, and I will query the system and get the answer for you.
+                                                                """,
                                                     ["execute_visualization_tool",
-                                                        "generate_pdf_report",
-                                                        "execute_sql_query"]
+                                                                "generate_pdf_report",
+                                                                "execute_sql_query"]
                                                     )
 
     async def worker(self):
@@ -53,7 +61,7 @@ class AgentManager():
             logging.error(f"Failed to connect: {e}")
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
-        communicate = create_comm_tool("SQL2PDF", self.connection_manager)
+        communicate = create_comm_tool("InventoryAgent", self.connection_manager)
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
         tools = [
                 communicate,
