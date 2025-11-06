@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO,
 
 class Communicate(BaseTool):
     """Tool class that inherits from base tool"""
-    name: str = "ContactOtherAgents"
+    name: str = "CommunicateTool"
     description: str = "A tool that allows you to contact other agents given a message, sender and recipient"
     args_schema: type[BaseModel]
 

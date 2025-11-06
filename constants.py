@@ -122,36 +122,17 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
             
             ---
             
-            **Example 1: Ambiguous Request**
+            **Example 1: 
             
-            *Last Message:* "Hey, can you help me with a complex physics problem?"
+            *Last Message:* "Hey, can you help me with this [task]?"
             
             *Your JSON Output:*
             
             {
               "recipient_id": "DirectoryAgent",
-              "message": "The user is asking for help with a complex physics problem. Please find the appropriate agent to handle this request."
+              "message": "I need help with [task]. Please delegate this task to the appropriate agent."
             }
-            **Example 3: Specific Agent**
-            
-            *Last Message:* "  I found a match: 'ClassificationAgent', who is registered with the capability: 'classify_review_criticality, analyze_review_sentiment'
-            
-            *Your JSON Output:*
-            
-            {
-              "recipient_id": "ClassificationAgent",
-              "message": "Hello, can you help me with perform the following sentiment analysis"
-            }
-            **Example 2: Specific Agent**
-            
-            *Last Message:* " I found a match: 'WebAgent', who is registered with the capability: 'WebSearch and Webscrape"
-            
-            *Your JSON Output:*
-            
-            {
-              "recipient_id": "WebAgent",
-              "message": "Hello, can you help me get the reviews from this website https://www.wikipedia.org/"
-            }
+            **IMPORTANT:**Your message should contain the full context of the users query
             """
     ),
     embed_user_input_prompt=(
