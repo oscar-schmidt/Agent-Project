@@ -25,7 +25,12 @@ def test_connection():
         print("DATABASE_URL=postgresql://postgres:ProjectD%40IS2025@db.gzqpxffdaacmmizrkmfa.supabase.co:5432/postgres")
         return False
 
+    # Clean the database URL (remove any whitespace or quotes)
+    database_url = database_url.strip().strip('"').strip("'")
+
     print("Testing Supabase connection...")
+    print(f"Connection string length: {len(database_url)} characters")
+    print(f"First 30 chars: {database_url[:30]}...")
     print(f"Host: {database_url.split('@')[1].split(':')[0] if '@' in database_url else 'unknown'}")
 
     try:
