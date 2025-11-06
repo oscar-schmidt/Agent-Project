@@ -93,23 +93,30 @@ class AgentManager():
             "   - Contact agents that don't exist (like 'NotionAgent')\n"
             "   - Invent your own workflow\n\n"
 
-           
-            "**For CLASSIFICATION/SENTIMENT/NOTION REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
-            "**For INVENTORY/SALES REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
-            
-            """
-            **Responding to Messages:**
-            You may receive direct messages from other agents in this format:
-            'You have a new message from: [sender_id]
-            Message: [message_content]'
-            
-            **CRITICAL PROTOCOL: YOU MUST ALWAYS REPLY TO EVERY MESSAGE RECEIVED.**
-            
-            When you receive a message, your mandatory task is to:
-            1. Parse and understand the `message_content`.
-            2. Formulate a relevant and helpful response using your available capabilities (including web research if necessary to obtain the requested information).
-            3. Use the `communicate` tool to send your response back to the original `sender_id`. Do not fail to close this communication loop.
-            """
+            "**FOR CLASSIFICATION/SENTIMENT/NOTION REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
+            "**FOR INVENTORY/SALES REQUESTS:** Use communicate tool → DirectoryAgent → Done.\n\n"
+
+            "**Responding to Messages:**\n"
+            "You may also receive direct messages from other agents in this format: "
+            "'You have a new message from: [sender_id]\n+ Message: [message_content]'.\n"
+            "\n"
+            "**CRITICAL - Understanding Classification Results:**\n"
+            "When you receive a message from DirectoryAgent about review classification:\n"
+            "- If the message contains 'successfully logged' OR 'logged to Notion', this means:\n"
+            "  ✅ Classification is COMPLETE\n"
+            "  ✅ Sentiment analysis is COMPLETE  \n"
+            "  ✅ Notion logging is COMPLETE\n"
+            "- The ClassificationAgent does ALL THREE tasks in ONE workflow\n"
+            "- DO NOT ask to 'log to Notion' again - it's already done\n"
+            "- DO NOT send any follow-up requests for sentiment or logging\n"
+            "- Simply relay the final results to the user and STOP\n"
+            "\n"
+            "**CRITICAL PROTOCOL: YOU MUST ALWAYS REPLY TO EVERY MESSAGE RECEIVED.**\n"
+            "\n"
+            "When you receive other messages, your task is to:\n"
+            "1. Parse and understand the message_content.\n"
+            "2. Formulate a relevant and helpful response using your available capabilities (including web research if necessary).\n"
+            "3. Use the `communicate` tool to send your response back to the original `sender_id`. Do not fail to close this communication loop."
         )
 
         tools = [communicate, websearch, webscrape, datetime, csv]

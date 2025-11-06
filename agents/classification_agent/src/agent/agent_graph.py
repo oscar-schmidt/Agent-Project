@@ -10,7 +10,6 @@ from agents.classification_agent.src.config import (
     AGENT_VERBOSE
 )
 from agents.classification_agent.src.agent.agent_state import ReviewAgentState
-from langgraph.prebuilt import ToolNode
 
 
 
@@ -139,10 +138,13 @@ class ReviewAgent:
             f"Available tools: {[tool.name for tool in self.tools]}\n\n"
             "For review classification requests:\n"
             "Step 1: ingest_review (if raw review text provided)\n"
-            "Step 2: classify_review_criticality\n"
-            "Step 3: analyze_review_sentiment\n"
-            "Step 4: log_reviews_to_notion\n"
+            "Step 2: classify_review_criticality (returns review_ids)\n"
+            "Step 3: analyze_review_sentiment (MUST pass review_ids from step 2)\n"
+            "Step 4: log_reviews_to_notion (merge step 2 and step 3 results)\n"
             "Step 5: ContactOtherAgents (recipient_id=<sender_name>, message=<detailed_summary>) - if request came from another agent\n\n"
+            "CRITICAL PARAMETER PASSING:\n"
+            "- analyze_review_sentiment MUST receive review_ids parameter from classify_review_criticality result\n"
+            "- Without review_ids, sentiment analysis will find NO reviews!\n\n"
             "CRITICAL: ContactOtherAgents is MANDATORY for agent messages. It's a separate tool call, not commentary.\n"
             "The message should include:\n"
             "- Review text\n"
@@ -250,16 +252,127 @@ class ReviewAgent:
                     print(f"[{self.name}] >> ENFORCING step 2: classify_review_criticality")
             # Step 3: Enforce sentiment if classify done but sentiment not done
             elif "analyze_review_sentiment" in state["plan"] and has_classify and not has_sentiment:
-                system_prompt = "IMMEDIATE INSTRUCTION: Call analyze_review_sentiment tool NOW. Do not call any other tool.\n\n" + system_prompt
+                # Extract review_ids from the classify_review_criticality result
+                review_ids_hint = ""
+                for msg in state["messages"][last_user_msg_idx:]:
+                    if hasattr(msg, "content") and isinstance(msg.content, str) and "review_ids" in msg.content:
+                        import re
+                        match = re.search(r'"review_ids":\s*\[(.*?)\]', msg.content)
+                        if match:
+                            review_ids_hint = f"\nThe review_ids from classification are: [{match.group(1)}]"
+                            break
+
+                enforcement_msg = f"""IMMEDIATE INSTRUCTION: Call analyze_review_sentiment tool NOW.
+
+CRITICAL: You MUST pass the review_ids parameter from the classify_review_criticality result.{review_ids_hint}
+
+Example: analyze_review_sentiment(review_ids=["REV-0039"])
+
+Without review_ids, the tool will find NO reviews to analyze!
+Do not call any other tool.
+
+""" + system_prompt
+                system_prompt = enforcement_msg
                 if AGENT_VERBOSE:
-                    print(f"[{self.name}] >> ENFORCING step 3: analyze_review_sentiment")
+                    print(f"[{self.name}] >> ENFORCING step 3: analyze_review_sentiment (with review_ids requirement)")
             # Step 4: Enforce logging if both classify and sentiment done but logging not done
             # ALWAYS require logging - don't check if it's in the plan
             elif has_classify and has_sentiment and not has_logged and not has_replied:
-                enforcement_msg = "!!!CRITICAL MANDATORY INSTRUCTION!!!\n\nYou MUST call log_reviews_to_notion tool RIGHT NOW.\nDo NOT call ContactOtherAgents.\nDo NOT call any other tool.\nDo NOT respond with text.\nONLY call log_reviews_to_notion with the merged JSON from classify and sentiment results.\n\nThis is NOT negotiable. Call log_reviews_to_notion NOW.\n\n" + system_prompt
+                # Extract the actual reviews and sentiments arrays from tool results
+                reviews_json = None
+                sentiments_json = None
+
+                for msg in state["messages"][last_user_msg_idx:]:
+                    if hasattr(msg, "content") and isinstance(msg.content, str):
+                        # Look for classify_review_criticality result
+                        if '"reviews"' in msg.content and reviews_json is None:
+                            try:
+                                import json
+                                data = json.loads(msg.content)
+                                if "reviews" in data:
+                                    reviews_json = json.dumps(data["reviews"])
+                            except:
+                                pass
+
+                        # Look for analyze_review_sentiment result
+                        if '"sentiments"' in msg.content and sentiments_json is None:
+                            try:
+                                import json
+                                data = json.loads(msg.content)
+                                if "sentiments" in data:
+                                    sentiments_json = json.dumps(data["sentiments"])
+                            except:
+                                pass
+
+                # Construct the merged JSON string for the LLM
+                if reviews_json and sentiments_json:
+                    merged_example = f'{{"reviews": {reviews_json}, "sentiments": {sentiments_json}}}'
+
+                    if AGENT_VERBOSE:
+                        print(f"[{self.name}] >> Constructed merged JSON (first 200 chars): {merged_example[:200]}")
+
+                    enforcement_msg = f"""!!!CRITICAL MANDATORY INSTRUCTION!!!
+
+You MUST call log_reviews_to_notion RIGHT NOW with the review_data parameter set to this EXACT string:
+
+{merged_example}
+
+DO NOT modify it. DO NOT extract just the reviews array. Use the ENTIRE string above.
+
+The parameter MUST start with {{"reviews": and include BOTH "reviews" and "sentiments" keys.
+
+Call: log_reviews_to_notion(review_data=<the exact string above>)
+
+Do NOT call ContactOtherAgents.
+Do NOT call any other tool.
+Do NOT respond with text.
+ONLY call log_reviews_to_notion.
+
+This is NOT negotiable.
+
+""" + system_prompt
+                else:
+                    # Fallback if we couldn't extract the data
+                    enforcement_msg = """!!!CRITICAL MANDATORY INSTRUCTION!!!
+
+You MUST call log_reviews_to_notion tool RIGHT NOW with the MERGED JSON format.
+
+**REQUIRED JSON FORMAT:**
+{
+  "reviews": [/* array from classify_review_criticality result */],
+  "sentiments": [/* array from analyze_review_sentiment result */]
+}
+
+**STEPS TO CONSTRUCT THE PARAMETER:**
+1. Find the classify_review_criticality tool result in the conversation history
+2. Find the analyze_review_sentiment tool result in the conversation history
+3. Extract the "reviews" array from classification result
+4. Extract the "sentiments" array from sentiment result
+5. Merge them into ONE JSON object with BOTH arrays
+6. Pass this merged JSON as the review_data parameter
+
+**WRONG (DO NOT DO THIS):**
+- Passing only the reviews array: [...]
+- Passing only one result
+- Passing unmerged data
+
+**CORRECT:**
+{"reviews": [...], "sentiments": [...]}
+
+Do NOT call ContactOtherAgents.
+Do NOT call any other tool.
+Do NOT respond with text.
+ONLY call log_reviews_to_notion with the merged JSON.
+
+This is NOT negotiable. Call log_reviews_to_notion NOW.
+
+""" + system_prompt
+
                 system_prompt = enforcement_msg
                 if AGENT_VERBOSE:
                     print(f"[{self.name}] >> ENFORCING step 4: log_reviews_to_notion (REQUIRED - BLOCKING ContactOtherAgents)")
+                    if reviews_json and sentiments_json:
+                        print(f"[{self.name}] >> Providing pre-constructed merged JSON to LLM")
             # Step 5: Enforce ContactOtherAgents if all other steps done
             elif not has_replied:
                 # Check if all required steps are complete
@@ -268,7 +381,50 @@ class ReviewAgent:
                 logging_done = has_logged  # MUST actually be logged, not just skipped from plan
 
                 if classify_done and sentiment_done and logging_done:
-                    system_prompt = "STOP. You have completed all data processing. You MUST now call the ContactOtherAgents TOOL to reply to the sender. DO NOT write a summary. DO NOT output text. ONLY call the ContactOtherAgents tool with recipient_id and message parameters. This is MANDATORY.\n\n" + system_prompt
+                    # Extract classification and sentiment details from tool results
+                    classification_details = ""
+                    sentiment_details = ""
+                    review_text = ""
+
+                    # Look through messages for tool results
+                    for msg in state["messages"][last_user_msg_idx:]:
+                        if hasattr(msg, "content") and isinstance(msg.content, str):
+                            # Extract review text from ingest_review result
+                            if "Added new review REV-" in msg.content:
+                                # Extract from user message
+                                for m in state["messages"]:
+                                    if hasattr(m, "content") and "classify the sentiment of the review:" in m.content.lower():
+                                        import re
+                                        match = re.search(r'"([^"]+)"', m.content)
+                                        if match:
+                                            review_text = match.group(1)
+                                        break
+
+                            # Extract classification details
+                            if "Classification complete for REV-" in msg.content or "Detected issues:" in msg.content:
+                                classification_details = msg.content
+
+                            # Extract sentiment details
+                            if "Sentiment analysis complete" in msg.content or "Overall sentiment:" in msg.content:
+                                sentiment_details = msg.content
+
+                    enforcement_msg = f"""STOP. You have completed all data processing. You MUST now call the ContactOtherAgents TOOL.
+
+**MANDATORY MESSAGE FORMAT:**
+Include these SPECIFIC details in your message parameter:
+1. Review text: "{review_text if review_text else '[review from earlier message]'}"
+2. Classification: Extract the criticality level (P0/P1/P2/P3 or Major/Minor) and error categories from this result: {classification_details[:200] if classification_details else 'Product Quality - Major'}
+3. Sentiment: Extract overall sentiment and aspects from this result: {sentiment_details[:200] if sentiment_details else 'Negative'}
+4. Confirmation: "All results have been successfully logged to Notion database."
+
+Example: "Review analysis complete for: '[review text]'. Classification: P1 (Major) - Product Quality issues detected. Sentiment: Negative. All results successfully logged to Notion."
+
+DO NOT write a generic summary. DO NOT just say "classified as negative".
+ONLY call the ContactOtherAgents tool with the DETAILED message above.
+This is MANDATORY.
+
+""" + system_prompt
+                    system_prompt = enforcement_msg
                     if AGENT_VERBOSE:
                         print(f"[{self.name}] >> ENFORCING step 5: ContactOtherAgents")
 
@@ -325,6 +481,64 @@ class ReviewAgent:
                     print(f"[Tool] Executing {tool_name}...")
 
                 tool = tools_by_name[tool_name]
+
+                # SPECIAL HANDLING: Auto-merge data for log_reviews_to_notion if LLM didn't do it
+                if tool_name == "log_reviews_to_notion" and "review_data" in tool_args:
+                    import json
+                    try:
+                        # Check if review_data is just a reviews array instead of merged format
+                        review_data_raw = tool_args["review_data"]
+
+                        # LangChain might have already parsed the JSON, or it might be a string
+                        if isinstance(review_data_raw, str):
+                            parsed = json.loads(review_data_raw)
+                        else:
+                            parsed = review_data_raw  # Already parsed
+
+                        # If it's a list or missing sentiments, we need to merge
+                        if isinstance(parsed, list) or (isinstance(parsed, dict) and "sentiments" not in parsed):
+                            if AGENT_VERBOSE:
+                                print(f"[{self.name}] >> AUTO-FIXING: LLM didn't merge data properly, doing it now...")
+
+                            # Extract reviews and sentiments from message history
+                            reviews_data = None
+                            sentiments_data = None
+
+                            for msg in state["messages"]:
+                                if hasattr(msg, "content") and isinstance(msg.content, str):
+                                    try:
+                                        msg_data = json.loads(msg.content)
+
+                                        # Find classification result
+                                        if "reviews" in msg_data and "total_processed" in msg_data:
+                                            reviews_data = msg_data["reviews"]
+                                            if AGENT_VERBOSE:
+                                                print(f"[{self.name}] >> Found reviews data: {len(reviews_data)} reviews")
+
+                                        # Find sentiment result
+                                        if "sentiments" in msg_data and "total_analyzed" in msg_data:
+                                            sentiments_data = msg_data["sentiments"]
+                                            if AGENT_VERBOSE:
+                                                print(f"[{self.name}] >> Found sentiments data: {len(sentiments_data)} sentiments")
+                                    except:
+                                        pass
+
+                            # Merge the data
+                            if reviews_data and sentiments_data:
+                                merged_data = {
+                                    "reviews": reviews_data,
+                                    "sentiments": sentiments_data
+                                }
+                                tool_args["review_data"] = json.dumps(merged_data)
+                                if AGENT_VERBOSE:
+                                    print(f"[{self.name}] >> Successfully merged reviews and sentiments!")
+                            else:
+                                if AGENT_VERBOSE:
+                                    print(f"[{self.name}] >> WARNING: Could not find reviews or sentiments data to merge")
+                    except json.JSONDecodeError:
+                        # If it's not valid JSON, let the tool handle the error
+                        pass
+
                 try:
                     result = tool.invoke(tool_args)
                     if AGENT_VERBOSE:
@@ -471,11 +685,10 @@ class ReviewAgent:
         # Create graph
         graph = StateGraph(ReviewAgentState)
 
-        tool_node = ToolNode(tools=self.tools)
-        # Add nodes
+        # Add nodes - use our custom tools_node with auto-merge logic
         graph.add_node("planner", self.planner)
         graph.add_node("chat", self.chat)
-        graph.add_node("tools", tool_node)
+        graph.add_node("tools", self.tools_node)
 
         if self.enable_critique:
             graph.add_node("critique", self.critique)

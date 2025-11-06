@@ -17,7 +17,24 @@ class NotionTool(BaseTool):
     """Tool for logging review analysis results to Notion database"""
 
     name: str = "log_reviews_to_notion"
-    description: str = "Log processed reviews to Notion database for team tracking and collaboration."
+    description: str = """Log processed reviews to Notion database for team tracking and collaboration.
+
+REQUIRED INPUT FORMAT - You MUST merge classification and sentiment results:
+{
+  "reviews": [array from classify_review_criticality tool result],
+  "sentiments": [array from analyze_review_sentiment tool result]
+}
+
+STEPS TO CREATE THE INPUT:
+1. Find the classify_review_criticality tool result in conversation history
+2. Find the analyze_review_sentiment tool result in conversation history
+3. Extract the "reviews" array from classification (step 1)
+4. Extract the "sentiments" array from sentiment analysis (step 2)
+5. Merge into ONE JSON: {"reviews": [...], "sentiments": [...]}
+6. Pass this merged JSON as the review_data parameter
+
+WRONG: Passing only reviews array or only one result
+CORRECT: {"reviews": [...], "sentiments": [...]}"""
 
     # Pydantic fields - must be declared as class attributes
     api_key: Optional[str] = None
@@ -83,11 +100,20 @@ class NotionTool(BaseTool):
 
         enriched_errors = []
 
-        reviews_list = data.get("reviews", [])
-        sentiments_list = data.get("sentiments", [])
+        # Handle both dictionary format and direct list format
+        if isinstance(data, dict):
+            reviews_list = data.get("reviews", [])
+            sentiments_list = data.get("sentiments", [])
+        elif isinstance(data, list):
+            # If data is a list, assume it's the reviews list
+            reviews_list = data
+            sentiments_list = []
+        else:
+            raise ValueError(f"Invalid data format: expected dict or list, got {type(data)}")
 
         # Build sentiment map by review ID
         sentiment_map = {}
+        print(f"[DEBUG NotionTool] Building sentiment map from {len(sentiments_list)} sentiment items")
         for sent_item in sentiments_list:
             review_id = sent_item.get("review_id")
             if review_id and "sentiment" in sent_item:
@@ -98,6 +124,8 @@ class NotionTool(BaseTool):
                     overall_confidence=s.get("confidence", 0.0),
                     sentiment_polarity=s.get("polarity", 0.0)
                 )
+                print(f"[DEBUG NotionTool] Added sentiment for {review_id}: {s.get('overall_sentiment', 'Neutral')}")
+        print(f"[DEBUG NotionTool] Sentiment map has {len(sentiment_map)} entries")
 
         # Process each review
         for review_item in reviews_list:
@@ -117,38 +145,65 @@ class NotionTool(BaseTool):
 
             # Get sentiment data for this review
             sentiment_data = sentiment_map.get(review_id)
+            print(f"[DEBUG NotionTool] Review {review_id}: sentiment_data = {sentiment_data}")
 
-            # Process each error in the review
+            # Create ONE enriched error per review (not one per error)
+            # Aggregate all errors into a single summary
             errors = review_item.get("errors", [])
+
+            if not errors:
+                # If no errors, skip this review or create a placeholder
+                continue
+
+            # Aggregate error information
+            all_categories = set()
+            error_summaries = []
+            highest_severity = "Low Priority"
+            severity_order = {"Critical": 4, "Major": 3, "Medium Priority": 2, "Low Priority": 1}
+
             for error_item in errors:
                 # Handle case where error_item might be a string instead of dict
                 if isinstance(error_item, str):
-                    # Skip string errors - they're not properly formatted
                     continue
 
                 # Support both old and new field names
                 categories = error_item.get("categories") or error_item.get("error_type", ["Other"])
                 severity = error_item.get("severity") or error_item.get("criticality", "Medium Priority")
 
-                detected_error = DetectedError(
-                    error_summary=error_item.get("error_summary", ""),
-                    error_type=categories,  # Maps to categories
-                    severity=severity,       # LLM-generated severity
-                    rationale=error_item.get("rationale", "")
-                )
+                # Collect categories
+                if isinstance(categories, list):
+                    all_categories.update(categories)
+                else:
+                    all_categories.add(categories)
 
-                criticality = severity  # Use severity as criticality for EnrichedError
+                # Collect error summaries
+                error_summaries.append(error_item.get("error_summary", ""))
 
-                enriched_errors.append(
-                    EnrichedError(
-                        review=review,
-                        error=detected_error,
-                        criticality=criticality,
-                        error_hash=hash_error(review_id, detected_error.error_summary),
-                        sentiment_data=sentiment_data,
-                        sentiment_influenced_criticality=False  # Can be enhanced later
-                    )
+                # Track highest severity
+                if severity_order.get(severity, 0) > severity_order.get(highest_severity, 0):
+                    highest_severity = severity
+
+            # Create combined error summary
+            combined_summary = "; ".join(error_summaries) if error_summaries else "Multiple issues detected"
+
+            # Create single DetectedError with aggregated data
+            detected_error = DetectedError(
+                error_summary=combined_summary,
+                error_type=list(all_categories),
+                severity=highest_severity,
+                rationale=f"Detected {len(errors)} issue(s) in review"
+            )
+
+            enriched_errors.append(
+                EnrichedError(
+                    review=review,
+                    error=detected_error,
+                    criticality=highest_severity,
+                    error_hash=hash_error(review_id, combined_summary),
+                    sentiment_data=sentiment_data,
+                    sentiment_influenced_criticality=False  # Can be enhanced later
                 )
+            )
 
         return enriched_errors
 
@@ -213,6 +268,7 @@ class NotionTool(BaseTool):
             JSON string with logging results
         """
         try:
+            print(f"[DEBUG NotionTool] Received review_data: {review_data[:500]}...")  # First 500 chars
             # Check if Notion is configured
             if not self.api_key or not self.database_id:
                 return json.dumps({

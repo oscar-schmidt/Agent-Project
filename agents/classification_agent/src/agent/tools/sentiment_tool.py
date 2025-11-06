@@ -125,7 +125,9 @@ class SentimentTool(BaseTool):
 
         for idx, review in enumerate(reviews, 1):
             try:
+                print(f"[DEBUG SentimentTool] Analyzing review {idx}/{len(reviews)}: {review.review_id}")
                 sentiment_data = analyze_sentiment_node(review)
+                print(f"[DEBUG SentimentTool] Sentiment result for {review.review_id}: {sentiment_data.overall_sentiment} (confidence={sentiment_data.overall_confidence:.4f}, polarity={sentiment_data.sentiment_polarity:.4f})")
 
                 results.append({
                     "review_id": review.review_id,
@@ -138,6 +140,7 @@ class SentimentTool(BaseTool):
                         "polarity": round(sentiment_data.sentiment_polarity, 4)
                     }
                 })
+                print(f"[DEBUG SentimentTool] Added sentiment result for {review.review_id}")
 
                 # Progress logging
                 if idx % 10 == 0:
@@ -178,8 +181,11 @@ class SentimentTool(BaseTool):
             JSON string with sentiment analysis results
         """
         try:
+            print(f"[DEBUG SentimentTool] Starting sentiment analysis - review_ids={review_ids}, limit={limit}")
+
             # Check if sentiment analysis is enabled
             if not self.sentiment_enabled:
+                print(f"[DEBUG SentimentTool] Sentiment analysis is DISABLED")
                 return json.dumps({
                     "error": "Sentiment analysis is disabled (ENABLE_SENTIMENT=false in config)",
                     "sentiments": [],
@@ -191,11 +197,16 @@ class SentimentTool(BaseTool):
 
             # Load reviews
             if review_ids:
+                print(f"[DEBUG SentimentTool] Loading reviews by IDs: {review_ids}")
                 reviews = self._load_reviews_by_ids(review_ids)
             else:
+                print(f"[DEBUG SentimentTool] Loading unprocessed reviews (limit={limit})")
                 reviews = self._load_unprocessed_reviews(limit)
 
+            print(f"[DEBUG SentimentTool] Loaded {len(reviews)} reviews")
+
             if not reviews:
+                print(f"[DEBUG SentimentTool] No reviews found!")
                 return json.dumps({
                     "message": "No reviews found to analyze",
                     "sentiments": [],
@@ -203,12 +214,14 @@ class SentimentTool(BaseTool):
                 })
 
             # Analyze sentiments
+            print(f"[DEBUG SentimentTool] Starting sentiment analysis for {len(reviews)} reviews...")
             results = self._analyze_sentiments(reviews)
+            print(f"[DEBUG SentimentTool] Sentiment analysis complete - {len(results)} results")
 
             # Calculate summary statistics
             successful_results = [r for r in results if "error" not in r.get("sentiment", {})]
 
-            return json.dumps({
+            result_json = json.dumps({
                 "sentiments": results,
                 "total_analyzed": len(results),
                 "review_ids": [r.review_id for r in reviews],
@@ -219,6 +232,9 @@ class SentimentTool(BaseTool):
                     "avg_polarity": round(sum(r["sentiment"]["polarity"] for r in successful_results) / len(successful_results), 4) if successful_results else 0
                 }
             }, indent=2)
+
+            print(f"[DEBUG SentimentTool] Returning result: {result_json[:500]}...")
+            return result_json
 
         except Exception as e:
             return json.dumps({
