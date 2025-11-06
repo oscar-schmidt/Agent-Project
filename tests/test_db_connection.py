@@ -21,17 +21,20 @@ def test_connection():
 
     if not database_url:
         print("ERROR: DATABASE_URL not found in .env file")
-        print("\nPlease add this line to your .env file:")
-        print("DATABASE_URL=postgresql://postgres:ProjectD%40IS2025@db.gzqpxffdaacmmizrkmfa.supabase.co:5432/postgres")
+        print("\nPlease add DATABASE_URL to your .env file in this format:")
+        print("DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require")
         return False
 
     # Clean the database URL (remove any whitespace or quotes)
     database_url = database_url.strip().strip('"').strip("'")
 
     print("Testing Supabase connection...")
-    print(f"Connection string length: {len(database_url)} characters")
-    print(f"First 30 chars: {database_url[:30]}...")
-    print(f"Host: {database_url.split('@')[1].split(':')[0] if '@' in database_url else 'unknown'}")
+    # Extract host without showing password
+    try:
+        host = database_url.split('@')[1].split(':')[0] if '@' in database_url else 'unknown'
+        print(f"Host: {host}")
+    except:
+        print("Host: Could not parse")
 
     try:
         # Try to connect
