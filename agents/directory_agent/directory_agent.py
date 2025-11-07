@@ -1,4 +1,5 @@
-import json
+import sys
+from nicegui import ui, app
 from agents.directory_agent.tools.retrievagentinfo import RetrieveAgent
 from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from agents.directory_agent.tools.updateagentinfo import UpdateAgentStatus
@@ -152,10 +153,90 @@ class AgentManager():
         await self.chat_manager.setup(tools=tools, prompt=description, type="web")
         asyncio.create_task(self.worker())
 
+application = AgentManager()
 
-async def main():
-    application = AgentManager()
+async def no_gui():
     await application.startup()
     await asyncio.Event().wait()
-if __name__ == "__main__":
-    asyncio.run(main())
+
+
+def setup_gui():
+    """Configures and runs the NiceGUI web interface."""
+    logging.info("Starting application in GUI mode...")
+    app.on_startup(application.startup)
+
+    @ui.page("/")
+    def gui_main_page():
+        async def handle_submit():
+            text_to_send = user_input.value
+            if not text_to_send:
+                return
+            user_input.value = ''
+            application.chat_manager.messages.append({'role': 'user', 'content': text_to_send})
+            update_chat_display()
+            await application.task_queue.put(text_to_send)
+        """
+        commented out for reasons
+        async def handle_file_upload(e: UploadEventArguments):
+            file_name = e.file.name
+            knowledge_dir = "./knowledge"
+            os.makedirs(knowledge_dir, exist_ok=True)
+
+            file_path = os.path.join(knowledge_dir, file_name)
+            try:
+                with open(file_path, 'wb') as file:
+                    file.write(await e.file.read())
+                    ui.notify(f"File {file_path} was successfully uploaded")
+                    await knowledge.ingest_pdf(file_path)
+            except Exception as e:
+                logging.error(f"Failed to upload file: {e}")
+                ui.notify(f"Failed to upload file: {e}", type='negative')
+        """
+        with ui.column().classes('w-full items-center'):
+            ui.label('Welcome Test User').classes('text-2xl mt-4')
+
+        chat_container = ui.column().classes('w-full max-w-2xl mx-auto gap-4 p-4')
+        logging.info("Setting up UI")
+
+        with ui.footer().classes('bg-white'), ui.column().classes('w-full max-w-3xl mx-auto my-6'):
+            with ui.row().classes('w-full no-wrap items-center'):
+                user_input = ui.input(placeholder="Ask Agent...") \
+                    .classes('flex-grow').on('keydown.enter', handle_submit)
+                submit_button = ui.button('>', on_click=handle_submit)
+                submit_button.bind_enabled_from(user_input, 'value')
+                """
+                commented out for reasons
+                 ui.upload(
+                    label="Upload File",
+                    on_upload=handle_file_upload,
+                    multiple=False,
+                    auto_upload=True,  # Set to True for a better user experience
+                ).props('flat bordered icon=attach_file')
+                """
+
+        def update_chat_display():
+            chat_container.clear()
+            with chat_container:
+                for msg in application.chat_manager.messages:
+                    if msg["role"] == "user":
+                        with ui.row().classes('w-full justify-start'):
+                            ui.chat_message(msg["content"], name="You", sent=True).classes(
+                                'bg-[#2f2f2f] text-gray-200 border border-[#E0E0E0] '
+                                'rounded-[20px] px-[15px] py-[10px] m-[5px] max-w-[70%]'
+                            )
+                    elif msg["role"] == "agent":
+                        with ui.row().classes('w-full justify-end'):
+                            ui.chat_message(msg["content"], name="Agent", sent=False).classes(
+                                'bg-[#2d2d2d] text-gray-200 '
+                                'rounded-[20px] px-[15px] py-[10px] m-[5px] max-w-[70%]'
+                            )
+
+        application.update_ui_callback = update_chat_display
+        update_chat_display()
+    ui.run()
+
+if __name__ in {"__main__", "__mp_main__"}:
+    if "-gui" in sys.argv:
+        setup_gui()
+    else:
+        asyncio.run(no_gui())
