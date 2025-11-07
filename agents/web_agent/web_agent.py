@@ -189,7 +189,6 @@ def setup_gui():
                             )
 
         application.update_ui_callback = update_chat_display
-        update_chat_display()
     ui.run()
 
 if __name__ in {"__main__", "__mp_main__"}:
