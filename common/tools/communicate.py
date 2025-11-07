@@ -37,6 +37,7 @@ class Communicate(BaseTool):
 
         try:
             logging.info(f"Sending message: {message_to_send}")
+            logging.info(f"[AGENT COMMUNICATION] Sender: {self.sender_id} -> Recipient: {recipient_id} | Message: {message[:150]}...")
             await self.web_connection.send(message_to_send)
             return "message sent successfully please wait fo the other agent to reply"
         except Exception as e:

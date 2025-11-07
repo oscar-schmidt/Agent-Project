@@ -1,6 +1,7 @@
 from langchain_core.messages import HumanMessage, AIMessage
 from common.agent.Agent import Agent
 from agents.classification_agent.src.agent.agent_graph import ReviewAgent
+from agents.pdf2sql_agent.src.agent.agent_graph import SQL2PDFAgent
 import aiosqlite
 from typing import List, Any
 import logging
@@ -24,6 +25,10 @@ class ChatManager:
             self.graph = await self.agent.graph_builder(self.connection)
         elif type == "classify":
             self.agent = ReviewAgent(name=self.name, tools=tools)
+            self.connection = await aiosqlite.connect(f'db/{self.name}.db')
+            self.graph = await self.agent.build_graph(self.connection)
+        elif type == "sql2pdf":
+            self.agent = SQL2PDFAgent(name=self.name, tools=tools)
             self.connection = await aiosqlite.connect(f'db/{self.name}.db')
             self.graph = await self.agent.build_graph(self.connection)
 

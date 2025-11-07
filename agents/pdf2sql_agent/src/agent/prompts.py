@@ -65,8 +65,8 @@ User: "Generate a report with the chart"
 
 ### Guidelines
 
-- Always explain what you’re doing before calling tools.
-- If the user says “those results” or “the previous ones,” use cached DataFrame and query.
+- Always explain what you're doing before calling tools.
+- If the user says "those results" or "the previous ones," use cached DataFrame and query.
 - Do not automatically chain tools unless explicitly instructed.
 - When possible, summarize:
   - The SQL query executed

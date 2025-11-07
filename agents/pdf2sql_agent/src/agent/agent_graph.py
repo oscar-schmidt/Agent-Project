@@ -175,6 +175,68 @@ class SQL2PDFAgent:
             if AGENT_VERBOSE:
                 print(f"[{self.name}] Revising based on critique")
 
+        # Check what tools have been called in THIS turn (since the last user message)
+        tools_called = []
+        last_user_msg_idx = -1
+        for i in range(len(state["messages"]) - 1, -1, -1):
+            msg = state["messages"][i]
+            if hasattr(msg, "type") and msg.type in ("human", "user"):
+                last_user_msg_idx = i
+                break
+            if msg.__class__.__name__ in ("HumanMessage", "UserMessage"):
+                last_user_msg_idx = i
+                break
+
+        # Only count tool calls AFTER the last user message
+        if last_user_msg_idx >= 0:
+            for msg in state["messages"][last_user_msg_idx:]:
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    tools_called.extend([tc.get("name") for tc in msg.tool_calls])
+
+        # Check if execute_sql_query was just called and we have its results
+        has_sql_result = False
+        sql_result_content = None
+
+        if AGENT_VERBOSE:
+            print(f"[{self.name}] Checking for SQL results in {len(state['messages'])} messages")
+            for i, msg in enumerate(state["messages"]):
+                msg_type = msg.__class__.__name__
+                has_name = hasattr(msg, "name")
+                name = getattr(msg, "name", None) if has_name else None
+                print(f"[{self.name}]   Message {i}: type={msg_type}, has_name={has_name}, name={name}")
+
+        for msg in reversed(state["messages"]):
+            if hasattr(msg, "name") and msg.name == "execute_sql_query":
+                has_sql_result = True
+                sql_result_content = msg.content
+                if AGENT_VERBOSE:
+                    print(f"[{self.name}] Found SQL result: {sql_result_content[:200] if sql_result_content else 'None'}...")
+                break
+
+        # ENFORCEMENT: If SQL query was called and returned results, force agent to present them
+        if has_sql_result and "execute_sql_query" in tools_called:
+            enforcement_msg = f"""CRITICAL: You just received SQL query results. You MUST now present these results to the user.
+
+The tool returned this data:
+{sql_result_content[:500] if sql_result_content else ""}...
+
+DO NOT just say "step completed".
+DO NOT just track progress.
+INSTEAD: Extract and present the key information:
+- What SQL query was executed
+- How many rows were returned
+- Show a preview of the data
+- Highlight key findings
+
+Format it clearly for the user. This is MANDATORY.
+
+""" + system_prompt
+            system_prompt = enforcement_msg
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] >> ENFORCING: Present SQL results to user")
+        elif AGENT_VERBOSE:
+            print(f"[{self.name}] No enforcement: has_sql_result={has_sql_result}, execute_sql_query in tools_called={'execute_sql_query' in tools_called}")
+
         # Prepare messages with system prompt
         messages_with_prompt = [("system", system_prompt)] + state["messages"]
 

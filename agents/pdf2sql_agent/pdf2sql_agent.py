@@ -77,7 +77,7 @@ class AgentManager():
                 execute_sql_query
         ]
 
-        await self.chat_manager.setup(tools=tools, prompt="", type="classify")
+        await self.chat_manager.setup(tools=tools, prompt="", type="sql2pdf")
         asyncio.create_task(self.worker())
 
 
