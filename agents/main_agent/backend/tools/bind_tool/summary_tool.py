@@ -23,7 +23,7 @@ class summary_tool(BaseTool):
 
         return ToolReturnClass(
             state=new_state,
-            agent_response=new_state.messages[-1].content if isinstance(
-                new_state.messages[-1], AIMessage) else "No response",
+            agent_response=new_state.tool_outputs[-1] if new_state.tool_outputs
+            else "No response",
             meta={"tool_name": "summary_tool"}
         )
