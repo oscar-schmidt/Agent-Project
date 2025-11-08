@@ -155,6 +155,7 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
 )
 
 
-# PYTHONASYNCIODEBUG=1 python main.py
-# python -m communication_server.server
-# python -m agents.main_agent.Server.WebAgent
+# how is GFranulovich thinks in AAMICarInsurancereviews__ProductReview.com.au.pdf
+# how ccifbonjovi thinks for AAMI
+# give summary for AAMICarInsurancereviews__ProductReview
+# is anyone mentions billing issues?how can we improve

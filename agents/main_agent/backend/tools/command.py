@@ -11,13 +11,10 @@ def command(tool_name: str, result: ToolReturnClass) -> GraphState:
 
     if not hasattr(state, "tool_outputs"):
         state.tool_outputs = []
-
     state.tool_outputs.append({
         "tool": tool_name,
         "agent_response": result.agent_response
     })
-
-    state.logs.append(f"[command] Cached {tool_name} output")
 
     if tool_name == tool_registry["qa_tool"]["name"]:
         StateManager.update_substate("qa_state", result.state.qa_state)
@@ -37,5 +34,4 @@ def command(tool_name: str, result: ToolReturnClass) -> GraphState:
 
     StateManager.update_substate("logs", result.state.logs)
     state.logs.append("[command] Log state updated")
-
     return state
