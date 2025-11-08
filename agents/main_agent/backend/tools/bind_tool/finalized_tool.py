@@ -30,10 +30,8 @@ class finalized_tool(BaseTool):
         state: GraphState = args["state"]
         should_recall: bool = args.get("should_recall", False)
         user_input = get_user_input()
-        try:
-            recent_msgs = [state.messages[-8]] if state.messages else []
-        except IndexError:
-            recent_msgs = []
+
+        recent_msgs = state.messages[-8:] if state.messages else []
         latest_tool_outputs = [
             tool for tool in state.tool_outputs
             if isinstance(tool, dict) and tool.get("tool") != "finalized_tool"
