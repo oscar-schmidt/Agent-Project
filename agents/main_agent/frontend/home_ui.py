@@ -169,7 +169,7 @@ def render_collection_list():
     with ui.column().classes('h-[300px] w-full overflow-y-auto p-3 bg-gray-50'):
         if collection_names:
             for collection_name in collection_names:
-                ui.markdown(collection_name)
+                ui.label(collection_name)
         else:
             ui.label("No collections yet")
     StateManager.update_state(state)
