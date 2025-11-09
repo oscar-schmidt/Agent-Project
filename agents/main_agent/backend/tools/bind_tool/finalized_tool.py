@@ -34,7 +34,6 @@ class finalized_tool(BaseTool):
         recent_msgs = state.messages[-8:] if state.messages else []
         latest_tool_outputs = [
             tool for tool in state.tool_outputs
-            if isinstance(tool, dict) and tool.get("tool") != "finalized_tool"
         ]
 
         messages = [
