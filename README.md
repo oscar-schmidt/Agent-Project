@@ -1,3 +1,5 @@
+**NOTE** out of date.
+
 # Project D
 ## 🏁 Getting Started
 ### Prerequisites
@@ -74,4 +76,4 @@ A quick way you can test the whole system is by providing a link to the main age
 Ideally, the main agent should contact the necessary agents for help and provided
 
 
-**NOTE** incomplete at the moment will update later.
+
